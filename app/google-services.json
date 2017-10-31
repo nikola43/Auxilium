@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "122309536055",
-    "firebase_url": "https://auxilium-e050e.firebaseio.com",
-    "project_id": "auxilium-e050e",
-    "storage_bucket": "auxilium-e050e.appspot.com"
+    "project_number": "454280947198",
+    "firebase_url": "https://auxilium-e8d2d.firebaseio.com",
+    "project_id": "auxilium-e8d2d",
+    "storage_bucket": "auxilium-e8d2d.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:122309536055:android:e13b29866a1e7421",
+        "mobilesdk_app_id": "1:454280947198:android:e13b29866a1e7421",
         "android_client_info": {
           "package_name": "com.pinillos.auxilium"
         }
       },
       "oauth_client": [
         {
-          "client_id": "122309536055-3p6buvb96s8jo7b0ccmcj9f6s63nd00j.apps.googleusercontent.com",
+          "client_id": "454280947198-nniutv20vrcge83ce76cm7bvp2babgn6.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.pinillos.auxilium",
@@ -23,13 +23,13 @@
           }
         },
         {
-          "client_id": "122309536055-02498gt6c76cdhus9mi3etimgrflvmud.apps.googleusercontent.com",
+          "client_id": "454280947198-2r041ud6i7t3e8psqfoetphjuvic5gte.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAw8-XRTyLV3gBLFkoZSwLPNeuDwAW0CUA"
+          "current_key": "AIzaSyB0HO-_RRlhH-aYrj4SJr2d9k1NwepsaCI"
         }
       ],
       "services": {
@@ -40,7 +40,7 @@
           "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "122309536055-02498gt6c76cdhus9mi3etimgrflvmud.apps.googleusercontent.com",
+              "client_id": "454280947198-2r041ud6i7t3e8psqfoetphjuvic5gte.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
