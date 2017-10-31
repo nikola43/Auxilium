@@ -1,9 +1,13 @@
 package com.pinillos.auxilium;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -64,6 +68,8 @@ public class MainActivity extends AppCompatActivity
     private GoogleMap mMap;
     int status;
 
+    String tipoIncidencia = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +91,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 toastMessage("Crear incidencia");
+
+                tipoIncidencia = seleccionarTipoIncidencia();
 
 
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
@@ -274,16 +282,29 @@ public class MainActivity extends AppCompatActivity
 
                 // Add a marker in Sydney and move the camera
                 LatLng miPosicion = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
-                mMap.addMarker(new MarkerOptions().position(miPosicion).title("Mi Posicion"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(miPosicion));
+                LatLng posicionIncidencia = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
 
-                FirebaseUser user = mAuth.getCurrentUser();
-                String userId = user.getUid();
-                String idObjeto = myRef.push().getKey();
 
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
+
+
+
+
+
+
+
+                    mMap.addMarker(new MarkerOptions().position(posicionIncidencia).title("Incidencia tipo "+tipoIncidencia));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
+
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    String userId = user.getUid();
+                    String idObjeto = myRef.push().getKey();
+
+                    myRef.child(userId).child("Incidencias").child(idObjeto).child("tipo").setValue(tipoIncidencia);
+                    myRef.child(userId).child("Incidencias").child(idObjeto).child("estado").setValue("true");
+                    myRef.child(userId).child("Incidencias").child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
+                    myRef.child(userId).child("Incidencias").child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
+                    myRef.child(userId).child("Incidencias").child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
+
             }
         }
     }
@@ -307,5 +328,31 @@ public class MainActivity extends AppCompatActivity
 
             return null;
         }
+    }
+
+    public String seleccionarTipoIncidencia()
+    {
+
+        final String tipos_incidencias[] = new String[4];
+        tipos_incidencias[0] = "Terremoto";
+        tipos_incidencias[1] = "Incendio";
+        tipos_incidencias[2] = "Corte luz";
+        tipos_incidencias[3] = "Accidente";
+
+        final String[] seleccionado = new String[1];
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        toastMessage(tipos_incidencias[which]);
+                        seleccionado[0] = tipos_incidencias[which];
+                    }
+                });
+        builder.show();
+        // loop till a runtime exception is triggered.
+
+        return  seleccionado[0];
     }
 }
