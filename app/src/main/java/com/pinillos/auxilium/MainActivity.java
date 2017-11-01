@@ -35,9 +35,11 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -92,10 +94,11 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View view) {
                 toastMessage("Crear incidencia");
 
-                tipoIncidencia = seleccionarTipoIncidencia();
+
 
 
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+                tipoIncidencia = seleccionarTipoIncidencia();
                 try {
                     startActivityForResult(builder.build(MainActivity.this), PLACE_PICKER_REQUEST);
                 } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
@@ -260,6 +263,7 @@ public class MainActivity extends AppCompatActivity
                 String latitude = String.valueOf(place.getLatLng().latitude);
                 String longitude = String.valueOf(place.getLatLng().longitude);
                 String address = String.format("%s", place.getAddress());
+
                 stBuilder.append("Name: ");
                 stBuilder.append(placename);
                 stBuilder.append("\n");
@@ -274,37 +278,31 @@ public class MainActivity extends AppCompatActivity
 
                 toastMessage(stBuilder.toString());
 
-                Circle circle = mMap.addCircle(new CircleOptions()
-                        .center(place.getLatLng())
-                        .radius(5)
-                        .strokeColor(Color.RED)
-                        .fillColor(Color.RED));
 
-                // Add a marker in Sydney and move the camera
-                LatLng miPosicion = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
+
+                FirebaseUser user = mAuth.getCurrentUser();
+                String userId = user.getUid();
+                String idObjeto = myRef.push().getKey();
+
+                // Cogemos la posicion de la incidencia
                 LatLng posicionIncidencia = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
 
 
+                //Añadimos marcador
+                mMap.addMarker(new MarkerOptions()
+                    .position(posicionIncidencia)
+                    .title("Incidencia tipo "+tipoIncidencia)
+                    .snippet("Creada por "+user.getEmail())
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round)));
 
+                //Movemos la camara al marcador
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
 
-
-
-
-
-
-                    mMap.addMarker(new MarkerOptions().position(posicionIncidencia).title("Incidencia tipo "+tipoIncidencia));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
-
-                    FirebaseUser user = mAuth.getCurrentUser();
-                    String userId = user.getUid();
-                    String idObjeto = myRef.push().getKey();
-
-                    myRef.child(userId).child("Incidencias").child(idObjeto).child("tipo").setValue(tipoIncidencia);
-                    myRef.child(userId).child("Incidencias").child(idObjeto).child("estado").setValue("true");
-                    myRef.child(userId).child("Incidencias").child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
-                    myRef.child(userId).child("Incidencias").child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
-                    myRef.child(userId).child("Incidencias").child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
-
+                myRef.child(userId).child("Incidencias").child(idObjeto).child("tipo").setValue(tipoIncidencia);
+                myRef.child(userId).child("Incidencias").child(idObjeto).child("estado").setValue("true");
+                myRef.child(userId).child("Incidencias").child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
+                myRef.child(userId).child("Incidencias").child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
+                myRef.child(userId).child("Incidencias").child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
             }
         }
     }
