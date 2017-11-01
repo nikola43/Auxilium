@@ -61,6 +61,9 @@ public class MainActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference myRef;
+    private String userID;
+    private FirebaseUser user;
+    private String idObjeto;
 
 
     private GoogleApiClient mGoogleApiClient;
@@ -120,6 +123,9 @@ public class MainActivity extends AppCompatActivity
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         myRef = mFirebaseDatabase.getReference();
+        user = mAuth.getCurrentUser();
+        userID = user.getUid();
+        idObjeto = myRef.push().getKey();
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -143,6 +149,8 @@ public class MainActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Object value = dataSnapshot.getValue();
                 Log.d(TAG, "Value is: " + value);
+
+
             }
 
             @Override
@@ -166,6 +174,7 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
     }
+
 
     @Override
     public void onBackPressed() {
@@ -352,5 +361,14 @@ public class MainActivity extends AppCompatActivity
         // loop till a runtime exception is triggered.
 
         return  seleccionado[0];
+    }
+
+    public void updateUI(FirebaseUser currentUser)
+    {
+        currentUser = mAuth.getCurrentUser();
+        String userId = currentUser.getUid();
+        String idObjeto = myRef.push().getKey();
+
+
     }
 }
