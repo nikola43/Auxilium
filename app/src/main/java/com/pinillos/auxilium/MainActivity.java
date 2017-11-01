@@ -1,16 +1,26 @@
 package com.pinillos.auxilium;
 
+import android.*;
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Path;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -75,6 +85,11 @@ public class MainActivity extends AppCompatActivity
 
     String tipoIncidencia = null;
 
+    LocationManager locationManager;
+    double longitudeBest, latitudeBest;
+    double longitudeGPS, latitudeGPS;
+    double longitudeNetwork, latitudeNetwork;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,8 +111,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 toastMessage("Crear incidencia");
-
-
 
 
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
@@ -217,7 +230,84 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
+            //if (!checkLocation())
+              //  return false;
+
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+
+            }
+            LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+            Location myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            final String fecha[] = getCurrentTimeStamp().split(" ");
+
+            toastMessage(myLocation.getLatitude()+" "+myLocation.getLongitude());
+            mMap.setMyLocationEnabled(true);
+
+
+
+
+
+            LatLng myLocationLatLon = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+            mMap.addMarker(new MarkerOptions()
+                    .position(myLocationLatLon)
+                    .title(user.getEmail()));
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocationLatLon, 15.0f));
+
+            //add location change listener with update duration 2000 millicseconds or 10 meters
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, new LocationListener() {
+                public void onLocationChanged(Location location) {
+
+                    longitudeGPS = location.getLongitude();
+                    latitudeGPS = location.getLatitude();
+                    LatLng myLocationLatLon = new LatLng(latitudeGPS, longitudeGPS);
+
+
+                    user = mAuth.getCurrentUser();
+                    userID = user.getUid();
+                    idObjeto = myRef.push().getKey();
+
+                    myRef.child(userID).child("Posiciones").child(fecha[0]).child(idObjeto).child("lat").setValue(latitudeGPS);
+                    myRef.child(userID).child("Posiciones").child(fecha[0]).child(idObjeto).child("lon").setValue(longitudeGPS);
+                    myRef.child(userID).child("Posiciones").child(fecha[0]).child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
+
+                    mMap.addMarker(new MarkerOptions()
+                            .position(myLocationLatLon)
+                            .title(user.getEmail()));
+
+                }
+
+                @Override
+                public void onStatusChanged(String s, int i, Bundle bundle) {
+
+                }
+
+                @Override
+                public void onProviderEnabled(String s) {
+
+                }
+
+                @Override
+                public void onProviderDisabled(String s) {
+
+                }
+
+            });
+
+
+
+
+
+
+
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -235,9 +325,10 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void toastMessage(String message){
-        Toast.makeText(this,message, Toast.LENGTH_SHORT).show();
+    private void toastMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
+
 
     @Override
     public void onStart() {
@@ -288,7 +379,6 @@ public class MainActivity extends AppCompatActivity
                 toastMessage(stBuilder.toString());
 
 
-
                 FirebaseUser user = mAuth.getCurrentUser();
                 String userId = user.getUid();
                 String idObjeto = myRef.push().getKey();
@@ -299,10 +389,10 @@ public class MainActivity extends AppCompatActivity
 
                 //Añadimos marcador
                 mMap.addMarker(new MarkerOptions()
-                    .position(posicionIncidencia)
-                    .title("Incidencia tipo "+tipoIncidencia)
-                    .snippet("Creada por "+user.getEmail())
-                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round)));
+                        .position(posicionIncidencia)
+                        .title("Incidencia tipo " + tipoIncidencia)
+                        .snippet("Creada por " + user.getEmail())
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round)));
 
                 //Movemos la camara al marcador
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
@@ -319,6 +409,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
 
 
     }
@@ -371,4 +462,178 @@ public class MainActivity extends AppCompatActivity
 
 
     }
+
+    private boolean checkLocation() {
+        if (!isLocationEnabled())
+            showAlert();
+        return isLocationEnabled();
+    }
+
+    private void showAlert() {
+        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Enable Location")
+                .setMessage("Su ubicación esta desactivada.\npor favor active su ubicación " +
+                        "usa esta app")
+                .setPositiveButton("Configuración de ubicación", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(myIntent);
+                    }
+                })
+                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    }
+                });
+        dialog.show();
+    }
+
+    private boolean isLocationEnabled() {
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
+    /*
+    public void toggleGPSUpdates(View view) {
+        if (!checkLocation())
+            return;
+        Button button = (Button) view;
+        if (button.getText().equals(getResources().getString(R.string.pause))) {
+            locationManager.removeUpdates(locationListenerGPS);
+            button.setText(R.string.resume);
+        } else {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            }
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 2 * 20 * 1000, 10, locationListenerGPS);
+            button.setText(R.string.pause);
+        }
+    }
+
+    public void toggleBestUpdates(View view) {
+        if (!checkLocation())
+            return;
+        Button button = (Button) view;
+        if (button.getText().equals(getResources().getString(R.string.pause))) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            }
+            locationManager.removeUpdates(locationListenerBest);
+            button.setText(R.string.resume);
+        } else {
+            Criteria criteria = new Criteria();
+            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            criteria.setAltitudeRequired(false);
+            criteria.setBearingRequired(false);
+            criteria.setCostAllowed(true);
+            criteria.setPowerRequirement(Criteria.POWER_LOW);
+            String provider = locationManager.getBestProvider(criteria, true);
+            if (provider != null) {
+                locationManager.requestLocationUpdates(provider, 2 * 20 * 1000, 10, locationListenerBest);
+                button.setText(R.string.pause);
+                Toast.makeText(this, "Best Provider is " + provider, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    public void toggleNetworkUpdates(View view) {
+        if (!checkLocation())
+            return;
+        Button button = (Button) view;
+        if (button.getText().equals(getResources().getString(R.string.pause))) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            }
+            locationManager.removeUpdates(locationListenerNetwork);
+            button.setText(R.string.resume);
+        }
+        else {
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 20 * 1000, 10, locationListenerNetwork);
+            Toast.makeText(this, "Network provider started running", Toast.LENGTH_LONG).show();
+            button.setText(R.string.pause);
+        }
+    }
+
+    */
+
+    private final LocationListener locationListenerNetwork = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            longitudeNetwork = location.getLongitude();
+            latitudeNetwork = location.getLatitude();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    toastMessage(longitudeNetwork+" "+latitudeNetwork);
+                    Toast.makeText(MainActivity.this, "Network Provider update", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+
+        }
+        @Override
+        public void onProviderDisabled(String s) {
+
+        }
+    };
+
+    private final LocationListener locationListenerBest = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            longitudeBest = location.getLongitude();
+            latitudeBest = location.getLatitude();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    toastMessage(longitudeBest+" "+latitudeGPS);
+                    Toast.makeText(MainActivity.this, "Best Provider update", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+        }
+    };
+
+    private final LocationListener locationListenerGPS = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            longitudeGPS = location.getLongitude();
+            latitudeGPS = location.getLatitude();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    toastMessage(longitudeGPS+" "+latitudeGPS);
+                    Toast.makeText(MainActivity.this, "GPS Provider update", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+        }
+        @Override
+        public void onProviderDisabled(String s) {
+        }
+    };
+
 }
