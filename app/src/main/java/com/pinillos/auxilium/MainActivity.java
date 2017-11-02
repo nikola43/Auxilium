@@ -63,7 +63,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
 
     private static final String TAG = "LoginActivity";
 
@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_camera) {
             //if (!checkLocation())
-              //  return false;
+            //  return false;
 
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -248,17 +248,17 @@ public class MainActivity extends AppCompatActivity
             Location myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             final String fecha[] = getCurrentTimeStamp().split(" ");
 
-            toastMessage(myLocation.getLatitude()+" "+myLocation.getLongitude());
-            mMap.setMyLocationEnabled(true);
-
-
-
+            toastMessage(myLocation.getLatitude() + " " + myLocation.getLongitude());
 
 
             LatLng myLocationLatLon = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-            mMap.addMarker(new MarkerOptions()
+            Marker m = mMap.addMarker(new MarkerOptions()
                     .position(myLocationLatLon)
                     .title(user.getEmail()));
+
+
+
+
 
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocationLatLon, 15.0f));
 
@@ -274,6 +274,7 @@ public class MainActivity extends AppCompatActivity
                     user = mAuth.getCurrentUser();
                     userID = user.getUid();
                     idObjeto = myRef.push().getKey();
+
 
                     myRef.child(userID).child("Posiciones").child(fecha[0]).child(idObjeto).child("lat").setValue(latitudeGPS);
                     myRef.child(userID).child("Posiciones").child(fecha[0]).child(idObjeto).child("lon").setValue(longitudeGPS);
@@ -303,11 +304,6 @@ public class MainActivity extends AppCompatActivity
             });
 
 
-
-
-
-
-
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -328,6 +324,8 @@ public class MainActivity extends AppCompatActivity
     private void toastMessage(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
+
+
 
 
     @Override
@@ -392,7 +390,8 @@ public class MainActivity extends AppCompatActivity
                         .position(posicionIncidencia)
                         .title("Incidencia tipo " + tipoIncidencia)
                         .snippet("Creada por " + user.getEmail())
-                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round)));
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round))
+                        .draggable(true));
 
                 //Movemos la camara al marcador
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
@@ -410,7 +409,73 @@ public class MainActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        mMap.setOnInfoWindowClickListener(this);
 
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+
+        /*
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                toastMessage("click marker");
+                return true;
+            }
+        });
+        */
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
+                toastMessage(marker.getPosition().latitude+" "+marker.getPosition().longitude);
+            }
+        });
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Incidencia creada por: \n"+
+                           "Titulo: "+marker.getTitle()+"\n"+
+                           "Descripcion: "+marker.getSnippet()+"\n"+
+                           "Numero: "+marker.getId()+"\n"+
+                           "Latitud: "+marker.getPosition().latitude+"\n"+
+                           "Longitud: "+marker.getPosition().longitude+"\n")
+                .setPositiveButton("Iniciar navegación", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        toastMessage("navegacion");
+                    }
+                })
+                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        toastMessage("cancelado");
+                    }
+                });
+        // Create the AlertDialog object and return it
+        builder.show();
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
 
     }
 
@@ -635,5 +700,6 @@ public class MainActivity extends AppCompatActivity
         public void onProviderDisabled(String s) {
         }
     };
+
 
 }
