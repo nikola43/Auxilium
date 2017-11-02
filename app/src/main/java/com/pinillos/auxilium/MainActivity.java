@@ -396,13 +396,21 @@ public class MainActivity extends AppCompatActivity
                 // Cogemos la posicion de la incidencia
                 LatLng posicionIncidencia = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
 
+                int iconoIncidencia = 0;
+
+                switch (tipoIncidencia)
+                {
+                    case "Incendio" : iconoIncidencia = R.mipmap.ic_incendio_round; break;
+                    case "Corte luz": iconoIncidencia = R.mipmap.ic_electrico_round; break;
+                    default: iconoIncidencia = R.mipmap.ic_incendio_round; break;
+                }
 
                 //Añadimos marcador
                 mMap.addMarker(new MarkerOptions()
                         .position(posicionIncidencia)
-                        .title("Incidencia tipo " + tipoIncidencia)
+                        .title(tipoIncidencia)
                         .snippet("Creada por " + user.getEmail())
-                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round))
+                        .icon(BitmapDescriptorFactory.fromResource(iconoIncidencia))
                         .draggable(true));
 
                 //Movemos la camara al marcador
@@ -434,6 +442,7 @@ public class MainActivity extends AppCompatActivity
             return;
         }
         mMap.setMyLocationEnabled(true);
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng());
 
         /*
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
@@ -519,11 +528,15 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        final String tipos_incidencias[] = new String[4];
+        final String tipos_incidencias[] = new String[8];
         tipos_incidencias[0] = "Terremoto";
         tipos_incidencias[1] = "Incendio";
         tipos_incidencias[2] = "Corte luz";
         tipos_incidencias[3] = "Accidente";
+        tipos_incidencias[4] = "AAAAAAAAA";
+        tipos_incidencias[5] = "BBBBBBBBB";
+        tipos_incidencias[6] = "BBBBBBBBB";
+        tipos_incidencias[7] = "BBBBBBBBB";
 
         final String[] seleccionado = new String[1];
 
