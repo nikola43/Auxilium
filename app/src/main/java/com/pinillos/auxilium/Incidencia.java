@@ -1,36 +1,31 @@
 package com.pinillos.auxilium;
 
-public class Indicendia
+public class Incidencia
 {
     //------------------------------- PROPIEDADES -----------------------------------------------//
     //BASICAS
     private boolean estado;
-    private double latitud, longitud;
-    private long numeroIncidencia;
-    private String tipo, fechaHora;
+    private double lat;
+    private double lon;
+    private String tipo;
+    private String timestamp;
     //------------------------------- FIN PROPIEDADES --------------------------------------------//
 
     //------------------------------- CONSTRUCTORES ----------------------------------------------//
     //CONSTRUCTOR POR DEFECTO
-    public Indicendia()
+    public Incidencia()
     {
-        this.numeroIncidencia = 0;
-        this.estado = false;
-        this.latitud = 0;
-        this.longitud = 0;
-        this.tipo = null;
-        this.fechaHora = null;
+
     }
 
     //CONSTRUCTOR SOBRECARGADO
-    public Indicendia(long numeroIncidencia,boolean estado, double latitud, double longitud, String tipo, String fechaHora)
+    public Incidencia(boolean estado, double lat, double lon, String tipo, String timestamp)
     {
-        this.numeroIncidencia = numeroIncidencia;
         this.estado = estado;
-        this.latitud = latitud;
-        this.longitud = longitud;
+        this.lat = lat;
+        this.lon = lon;
         this.tipo = tipo;
-        this.fechaHora = fechaHora;
+        this.timestamp = timestamp;
     }
 
     //CONSTRUCTOR DE COPIA
@@ -43,47 +38,39 @@ public class Indicendia
         return estado;
     }
 
-    public long getNumeroIncidencia() {
-        return numeroIncidencia;
+    public double getLat() {
+        return lat;
     }
 
-    public double getLatitud() {
-        return latitud;
-    }
-
-    public double getLongitud() {
-        return longitud;
+    public double getLon() {
+        return lon;
     }
 
     public String getTipo() {
         return tipo;
     }
 
-    public String getFechaHora() {
-        return fechaHora;
+    public String getTimestamp() {
+        return timestamp;
     }
     //------------------------------- FIN METODOS CONSULTORES ------------------------------------//
 
     //------------------------------- METODOS MODIFICADORES --------------------------------------//
 
-    public void setNumeroIncidencia(long numeroIncidencia) {
-        this.numeroIncidencia = numeroIncidencia;
-    }
-
     public void setEstado(boolean estado) {
         this.estado = estado;
     }
 
-    public void setLatitud(double latitud) {
-        this.latitud = latitud;
+    public void setLat(double lat) {
+        this.lat = lat;
     }
 
-    public void setLongitud(double longitud) {
-        this.longitud = longitud;
+    public void setLon(double lon) {
+        this.lon = lon;
     }
 
-    public void setFechaHora(String fechaHora) {
-        this.fechaHora = fechaHora;
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
     }
 
     public void setTipo(String tipo) {

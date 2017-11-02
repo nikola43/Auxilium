@@ -85,8 +85,6 @@ public class MainActivity extends AppCompatActivity
     private GoogleMap mMap;
     int status;
 
-    String tipoIncidencia = null;
-
     LocationManager locationManager;
     double longitudeBest, latitudeBest;
     double longitudeGPS, latitudeGPS;
@@ -112,7 +110,7 @@ public class MainActivity extends AppCompatActivity
         fabPickPlace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toastMessage("Crear incidencia");
+                //toastMessage("Crear incidencia");
 
 
 
@@ -141,7 +139,7 @@ public class MainActivity extends AppCompatActivity
 
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        myRef = mFirebaseDatabase.getReference();
+        myRef = mFirebaseDatabase.getInstance().getReference("incidencias");
         user = mAuth.getCurrentUser();
         userID = user.getUid();
         idObjeto = myRef.push().getKey();
@@ -168,6 +166,52 @@ public class MainActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Object value = dataSnapshot.getValue();
                 Log.d(TAG, "Value is: " + value);
+
+
+                toastMessage("indicendia creada"+user.getEmail());
+                mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(latitudeGPS, longitudeGPS))
+                        .title("test")
+                        .snippet("Creada por " + user.getEmail())
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_incendio_round))
+                        .draggable(true));
+
+                for (DataSnapshot incidenciaSnapShot : dataSnapshot.getChildren())
+                {
+
+                    String idIncidencia = incidenciaSnapShot.child("timestamp").getValue(String.class);
+                    //String estadoIncidencia = incidenciaSnapShot.child("Incidencias").child(idObjeto).child("estado").getValue(String.class);
+
+                    //Incidencia indicendia = dataSnapshot.getValue(Incidencia.class);
+                    //toastMessage(idIncidencia);
+
+
+
+                    /*
+                    LatLng posicionIncidencia = new LatLng(indicendia.getLatitud(), indicendia.getLongitud());
+
+                    int iconoIncidencia = 0;
+
+                    switch (indicendia.getTipo())
+                    {
+                        case "Incendio" : iconoIncidencia = R.mipmap.ic_incendio_round; break;
+                        case "Corte luz": iconoIncidencia = R.mipmap.ic_electrico_round; break;
+                        default: iconoIncidencia = R.mipmap.ic_incendio_round; break;
+                    }
+
+
+                    mMap.addMarker(new MarkerOptions()
+                            .position(posicionIncidencia)
+                            .title(indicendia.getTipo())
+                            .snippet("Creada por " + user.getEmail())
+                            .icon(BitmapDescriptorFactory.fromResource(iconoIncidencia))
+                            .draggable(true));
+                            */
+
+
+
+
+                }
 
 
             }
@@ -383,15 +427,17 @@ public class MainActivity extends AppCompatActivity
                 stBuilder.append(address);
 
 
+                String tipoIncidencia = null;
+
                 tipoIncidencia = seleccionarTipoIncidencia();
 
-                toastMessage(stBuilder.toString());
+                //toastMessage(stBuilder.toString());
 
 
 
-                FirebaseUser user = mAuth.getCurrentUser();
-                String userId = user.getUid();
-                String idObjeto = myRef.push().getKey();
+                user = mAuth.getCurrentUser();
+                userID = user.getUid();
+                idObjeto = myRef.push().getKey();
 
                 // Cogemos la posicion de la incidencia
                 LatLng posicionIncidencia = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
@@ -416,11 +462,11 @@ public class MainActivity extends AppCompatActivity
                 //Movemos la camara al marcador
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
 
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("tipo").setValue(tipoIncidencia);
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("estado").setValue("true");
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
-                myRef.child(userId).child("Incidencias").child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
+                myRef.child(idObjeto).child("tipo").setValue(tipoIncidencia);
+                myRef.child(idObjeto).child("estado").setValue("true");
+                myRef.child(idObjeto).child("lat").setValue(place.getLatLng().latitude);
+                myRef.child(idObjeto).child("lon").setValue(place.getLatLng().longitude);
+                myRef.child(idObjeto).child("timestamp").setValue(getCurrentTimeStamp());
             }
         }
     }
@@ -545,7 +591,6 @@ public class MainActivity extends AppCompatActivity
         builder.setTitle("Selecciona el tipo de la incidencia: ")
                 .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        toastMessage(tipos_incidencias[which]);
                         seleccionado[0] = tipos_incidencias[which];
                         handler.sendMessage(handler.obtainMessage());
 
