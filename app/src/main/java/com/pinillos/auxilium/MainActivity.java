@@ -14,7 +14,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -113,8 +115,12 @@ public class MainActivity extends AppCompatActivity
                 toastMessage("Crear incidencia");
 
 
+
+
+
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-                tipoIncidencia = seleccionarTipoIncidencia();
+
+
                 try {
                     startActivityForResult(builder.build(MainActivity.this), PLACE_PICKER_REQUEST);
                 } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
@@ -260,6 +266,8 @@ public class MainActivity extends AppCompatActivity
 
 
 
+
+
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocationLatLon, 15.0f));
 
             //add location change listener with update duration 2000 millicseconds or 10 meters
@@ -374,7 +382,11 @@ public class MainActivity extends AppCompatActivity
                 stBuilder.append("Address: ");
                 stBuilder.append(address);
 
+
+                tipoIncidencia = seleccionarTipoIncidencia();
+
                 toastMessage(stBuilder.toString());
+
 
 
                 FirebaseUser user = mAuth.getCurrentUser();
@@ -493,8 +505,19 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+
+
     public String seleccionarTipoIncidencia()
     {
+
+        final Handler handler = new Handler()
+        {
+            @Override
+            public void handleMessage(Message mesg)
+            {
+                throw new RuntimeException();
+            }
+        };
 
         final String tipos_incidencias[] = new String[4];
         tipos_incidencias[0] = "Terremoto";
@@ -504,19 +527,36 @@ public class MainActivity extends AppCompatActivity
 
         final String[] seleccionado = new String[1];
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         builder.setTitle("Selecciona el tipo de la incidencia: ")
                 .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         toastMessage(tipos_incidencias[which]);
                         seleccionado[0] = tipos_incidencias[which];
+                        handler.sendMessage(handler.obtainMessage());
+
                     }
                 });
         builder.show();
+        try{ Looper.loop(); }
+        catch(RuntimeException e){}
+
         // loop till a runtime exception is triggered.
 
         return  seleccionado[0];
+
+        /*
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        toastMessage(tipos_incidencias[which]);
+                        seleccionado[0] = tipos_incidencias[which];
+
+                    }
+                });
+        builder.show();
+         */
     }
 
     public void updateUI(FirebaseUser currentUser)
