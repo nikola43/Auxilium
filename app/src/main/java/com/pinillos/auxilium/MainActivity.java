@@ -52,6 +52,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -68,6 +70,7 @@ public class MainActivity extends AppCompatActivity
     private String userID;
     private FirebaseUser user;
     private String idObjeto;
+
 
 
     private GoogleApiClient mGoogleApiClient;
@@ -135,6 +138,7 @@ public class MainActivity extends AppCompatActivity
         user = mAuth.getCurrentUser();
         userID = user.getUid();
         idObjeto = myRef.push().getKey();
+
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -713,6 +717,14 @@ public class MainActivity extends AppCompatActivity
 
         //Write incidence to firebase database
         myRef.child(incidenceID).setValue(incidence);
+
+        FirebaseMessaging firebaseMessaging = FirebaseMessaging.getInstance();
+
+        firebaseMessaging.send(new RemoteMessage.Builder(userID)
+                        .setMessageId("2")
+                        .addData("key", "value")
+                        .build());
+
     }
 
 
