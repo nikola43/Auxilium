@@ -4,12 +4,14 @@ package com.pinillos.auxilium;
 public class Position {
     private double lat, lon;
     private String timestamp;
+    private String creatorID;
 
     public Position() {
 
     }
 
-    public Position(double lat, double lon, String timestamp) {
+    public Position(String creatorID, double lat, double lon, String timestamp) {
+        this.creatorID  = creatorID;
         this.lat = lat;
         this.lon = lon;
         this.timestamp = timestamp;
@@ -25,6 +27,14 @@ public class Position {
 
     public String getTimestamp() {
         return timestamp;
+    }
+
+    public String getCreatorID() {
+        return creatorID;
+    }
+
+    public void setCreatorID(String creatorID) {
+        this.creatorID = creatorID;
     }
 
     public void setLat(double lat) {

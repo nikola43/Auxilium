@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity
                             String incidenceID = currentItem.getKey();
                             Incidence incidence = currentItem.getValue(Incidence.class);
 
+                            /*
                             toastMessage
                             (
                                 incidenceID+"\n"+
@@ -181,6 +182,7 @@ public class MainActivity extends AppCompatActivity
                                 incidence.getTimestamp()+"\n"+
                                 incidence.getType()
                             );
+                            */
 
                             LatLng incidenceLatLon = new LatLng(incidence.getLat(), incidence.getLon());
 
@@ -198,7 +200,7 @@ public class MainActivity extends AppCompatActivity
                                 mMap.addMarker(new MarkerOptions()
                                         .position(incidenceLatLon)
                                         .title(incidence.getType())
-                                        .snippet("ID: "+incidenceID)
+                                        .snippet("Creada por "+incidence.getCreatorID())
                                         .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
                                         .draggable(true));
                             }
@@ -208,14 +210,20 @@ public class MainActivity extends AppCompatActivity
                         {
                             String positionID = currentItem.getKey();
                             Position position = currentItem.getValue(Position.class);
+                            /*
                             toastMessage
                                     (
-                                                    positionID + "\n" +
+                                                    "usuario: "+ position.getCreatorID()+"\n"+
                                                     position.getTimestamp() + "\n" +
                                                     position.getLat() + "\n" +
                                                     position.getLon()
 
                                     );
+                            */
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(position.getLat(), position.getLon()))
+                                    .title(position.getCreatorID())
+                                    .snippet("Lat: "+ position.getLat()+ " Lon: "+position.getLon()));
                         }
 
 
@@ -411,7 +419,7 @@ public class MainActivity extends AppCompatActivity
 
             myRef = mFirebaseDatabase.getInstance().getReference("position");
             String posicionID = myRef.push().getKey();
-            Position myPosition =  new Position(latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+            Position myPosition =  new Position(user.getEmail(),latitudeGPS, longitudeGPS, getCurrentTimeStamp());
             myRef.child(posicionID).setValue(myPosition);
 
 
@@ -420,24 +428,23 @@ public class MainActivity extends AppCompatActivity
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocationLatLon, 15.0f));
 
             //add location change listener with update duration 2000 millicseconds or 10 meters
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, new LocationListener() {
                 public void onLocationChanged(Location location) {
 
-                    mMap.clear();
+
                     longitudeGPS = location.getLongitude();
                     latitudeGPS = location.getLatitude();
 
-/*
-                    myRef = mFirebaseDatabase.getInstance().getReference("position");
-                    String posicionID = myRef.push().getKey();
-                    Position myPosition =  new Position(latitudeGPS, longitudeGPS, getCurrentTimeStamp());
-                    myRef.child(posicionID).setValue(myPosition);
-
 
                     mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitudeGPS, longitudeGPS))
+                            .position(new LatLng(location.getLatitude(), location.getLongitude()))
                             .title(user.getEmail()));
-                            */
+
+
+                    myRef = mFirebaseDatabase.getInstance().getReference("position");
+                    String posicionID = myRef.push().getKey();
+                    Position myPosition =  new Position(user.getEmail(),latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+                    myRef.child(posicionID).setValue(myPosition);
                 }
 
                 @Override
@@ -559,7 +566,7 @@ public class MainActivity extends AppCompatActivity
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
 
                 //Write incidence to database
-                writeIncidenceToFirebase(posicionIncidencia.latitude, posicionIncidencia.longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                writeIncidenceToFirebase(user.getEmail(),posicionIncidencia.latitude, posicionIncidencia.longitude, true, getCurrentTimeStamp(), tipoIncidencia);
             }
         }
     }
@@ -698,11 +705,11 @@ public class MainActivity extends AppCompatActivity
     /*
 
      */
-    private void writeIncidenceToFirebase(double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
+    private void writeIncidenceToFirebase(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
 
         myRef = mFirebaseDatabase.getInstance().getReference("incidence");
         String incidenceID = myRef.push().getKey();
-        Incidence incidence = new Incidence(user.getUid(),lat, lon, state, currentTimeStamp, incidenceType);
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType);
 
         //Write incidence to firebase database
         myRef.child(incidenceID).setValue(incidence);
