@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity
 
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        myRef = mFirebaseDatabase.getInstance().getReference("incidence");
+        myRef = mFirebaseDatabase.getInstance().getReference( );
         user = mAuth.getCurrentUser();
         userID = user.getUid();
         idObjeto = myRef.push().getKey();
@@ -157,24 +157,141 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
+
                 mMap.clear();
+
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren())
+                {
+                    String objectType = dbObjects.getKey();
+
+                    for (DataSnapshot currentItem : dbObjects.getChildren())
+                    {
+                        if ( objectType.equals("incidence") )
+                        {
+                            String incidenceID = currentItem.getKey();
+                            Incidence incidence = currentItem.getValue(Incidence.class);
+
+                            toastMessage
+                            (
+                                incidenceID+"\n"+
+                                incidence.getCreatorID()+"\n"+
+                                incidence.getLat()+"\n"+
+                                incidence.getLon()+"\n"+
+                                incidence.getStatus()+"\n"+
+                                incidence.getTimestamp()+"\n"+
+                                incidence.getType()
+                            );
+
+                            LatLng incidenceLatLon = new LatLng(incidence.getLat(), incidence.getLon());
+
+                            int incidenceIcon = 0;
+
+                            switch (incidence.getType())
+                            {
+                                case "Incendio" : incidenceIcon = R.mipmap.ic_incendio_round; break;
+                                case "Corte luz": incidenceIcon = R.mipmap.ic_electrico_round; break;
+                                default: incidenceIcon = R.mipmap.ic_incendio_round; break;
+                            }
+
+                            if ( incidence.getStatus() )
+                            {
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(incidenceLatLon)
+                                        .title(incidence.getType())
+                                        .snippet("ID: "+incidenceID)
+                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                        .draggable(true));
+                            }
+                        }
+
+                        if ( objectType.equals("position"))
+                        {
+                            String positionID = currentItem.getKey();
+                            Position position = currentItem.getValue(Position.class);
+                            toastMessage
+                                    (
+                                                    positionID + "\n" +
+                                                    position.getTimestamp() + "\n" +
+                                                    position.getLat() + "\n" +
+                                                    position.getLon()
+
+                                    );
+                        }
+
+
+
+
+
+
+                    }
+
+                    //toastMessage(myRef.child(posicion.getKey()).push().getKey());
+
+
+
+
+
+
+
+
+
+/*
+
+                    if ( tipoDato.equals("incidence") )
+                    {
+                        String idObjeto = posicion.child(tipoDato).getKey();
+                        toastMessage(idObjeto);
+                        Incidence incidence = posicion.getValue(Incidence.class);
+                        toastMessage
+                                (
+                                        //incidenceID+"\n"+
+                                                incidence.getCreatorID()+"\n"+
+                                                incidence.getLat()+"\n"+
+                                                incidence.getLon()+"\n"+
+                                                incidence.getStatus()+"\n"+
+                                                incidence.getTimestamp()+"\n"+
+                                                incidence.getType()
+                                );
+                    }
+
+                    Position position = posicion.getValue(Position.class);
+
+                    //toastMessage(String.valueOf(incidenceID));
+
+*/
+                    /*
+                    toastMessage
+                            (
+                                    incidenceID + "\n" +
+                                            position.getTimestamp() + "\n" +
+                                            position.getLat() + "\n" +
+                                            position.getLon()
+
+                            );
+                    */
+                }
+
+                /*
                 for (DataSnapshot incidenciaSnapShot : dataSnapshot.getChildren())
                 {
-
-
                     String incidenceID = incidenciaSnapShot.getKey();
                     Incidence incidence = incidenciaSnapShot.getValue(Incidence.class);
+                    Position position = incidenciaSnapShot.getValue(Position.class);
+
 
 
                     toastMessage
                     (
                             incidenceID+"\n"+
+                            incidence.getCreatorID()+"\n"+
                             incidence.getLat()+"\n"+
                             incidence.getLon()+"\n"+
                             incidence.getStatus()+"\n"+
                             incidence.getTimestamp()+"\n"+
                             incidence.getType()
                     );
+
+
 
                     LatLng incidenceLatLon = new LatLng(incidence.getLat(), incidence.getLon());
 
@@ -198,6 +315,9 @@ public class MainActivity extends AppCompatActivity
                     }
 
                 }
+                */
+
+
 
             }
 
@@ -281,18 +401,18 @@ public class MainActivity extends AppCompatActivity
             }
             LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             Location myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            final String fecha[] = getCurrentTimeStamp().split(" ");
-
-            toastMessage(myLocation.getLatitude() + " " + myLocation.getLongitude());
-
-
             LatLng myLocationLatLon = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-            Marker m = mMap.addMarker(new MarkerOptions()
+
+
+
+             mMap.addMarker(new MarkerOptions()
                     .position(myLocationLatLon)
                     .title(user.getEmail()));
 
-
-
+            myRef = mFirebaseDatabase.getInstance().getReference("position");
+            String posicionID = myRef.push().getKey();
+            Position myPosition =  new Position(latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+            myRef.child(posicionID).setValue(myPosition);
 
 
 
@@ -303,23 +423,21 @@ public class MainActivity extends AppCompatActivity
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 1, new LocationListener() {
                 public void onLocationChanged(Location location) {
 
+                    mMap.clear();
                     longitudeGPS = location.getLongitude();
                     latitudeGPS = location.getLatitude();
-                    LatLng myLocationLatLon = new LatLng(latitudeGPS, longitudeGPS);
 
-
+/*
                     myRef = mFirebaseDatabase.getInstance().getReference("position");
                     String posicionID = myRef.push().getKey();
-
                     Position myPosition =  new Position(latitudeGPS, longitudeGPS, getCurrentTimeStamp());
-
                     myRef.child(posicionID).setValue(myPosition);
 
 
-                    //mMap.addMarker(new MarkerOptions()
-                     //       .position(myLocationLatLon)
-                     //       .title(user.getEmail()));
-
+                    mMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(latitudeGPS, longitudeGPS))
+                            .title(user.getEmail()));
+                            */
                 }
 
                 @Override
@@ -495,7 +613,7 @@ public class MainActivity extends AppCompatActivity
                            "Numero: "+marker.getId()+"\n"+
                            "Latitud: "+marker.getPosition().latitude+"\n"+
                            "Longitud: "+marker.getPosition().longitude+"\n")
-                .setPositiveButton("Iniciar navegación", new DialogInterface.OnClickListener() {
+                .setPositiveButton("Terminar incidencia", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         toastMessage("navegacion");
                     }
@@ -584,7 +702,7 @@ public class MainActivity extends AppCompatActivity
 
         myRef = mFirebaseDatabase.getInstance().getReference("incidence");
         String incidenceID = myRef.push().getKey();
-        Incidence incidence = new Incidence(lat, lon, state, currentTimeStamp, incidenceType);
+        Incidence incidence = new Incidence(user.getUid(),lat, lon, state, currentTimeStamp, incidenceType);
 
         //Write incidence to firebase database
         myRef.child(incidenceID).setValue(incidence);

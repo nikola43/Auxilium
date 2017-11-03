@@ -4,6 +4,7 @@ public class Incidence
 {
     //------------------------------- PROPIEDADES -----------------------------------------------//
     //BASICAS
+    private String creatorID;
     private boolean status;
     private double lat;
     private double lon;
@@ -19,9 +20,9 @@ public class Incidence
     }
 
     //CONSTRUCTOR SOBRECARGADO
-    public Incidence(double lat, double lon, boolean status, String timestamp, String type)
+    public Incidence(String creatorID, double lat, double lon, boolean status, String timestamp, String type)
     {
-
+        this.creatorID = creatorID;
         this.lat = lat;
         this.lon = lon;
         this.status = status;
@@ -35,6 +36,10 @@ public class Incidence
 
     //------------------------------- METODOS CONSULTORES ----------------------------------------//
 
+
+    public String getCreatorID() {
+        return creatorID;
+    }
 
     public boolean getStatus() {
         return status;
@@ -58,6 +63,11 @@ public class Incidence
     //------------------------------- FIN METODOS CONSULTORES ------------------------------------//
 
     //------------------------------- METODOS MODIFICADORES --------------------------------------//
+
+
+    public void setCreatorID(String creatorID) {
+        this.creatorID = creatorID;
+    }
 
     public void setStatus(boolean status) {
         this.status = status;
