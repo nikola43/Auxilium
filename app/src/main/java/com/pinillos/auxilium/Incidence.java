@@ -1,31 +1,33 @@
 package com.pinillos.auxilium;
 
-public class Incidencia
+public class Incidence
 {
     //------------------------------- PROPIEDADES -----------------------------------------------//
     //BASICAS
-    private boolean estado;
+    private boolean status;
     private double lat;
     private double lon;
-    private String tipo;
+    private String type;
     private String timestamp;
     //------------------------------- FIN PROPIEDADES --------------------------------------------//
 
     //------------------------------- CONSTRUCTORES ----------------------------------------------//
     //CONSTRUCTOR POR DEFECTO
-    public Incidencia()
+    public Incidence()
     {
 
     }
 
     //CONSTRUCTOR SOBRECARGADO
-    public Incidencia(boolean estado, double lat, double lon, String tipo, String timestamp)
+    public Incidence(double lat, double lon, boolean status, String timestamp, String type)
     {
-        this.estado = estado;
+
         this.lat = lat;
         this.lon = lon;
-        this.tipo = tipo;
+        this.status = status;
         this.timestamp = timestamp;
+        this.type = type;
+
     }
 
     //CONSTRUCTOR DE COPIA
@@ -34,8 +36,8 @@ public class Incidencia
     //------------------------------- METODOS CONSULTORES ----------------------------------------//
 
 
-    public boolean getEstado() {
-        return estado;
+    public boolean getStatus() {
+        return status;
     }
 
     public double getLat() {
@@ -46,8 +48,8 @@ public class Incidencia
         return lon;
     }
 
-    public String getTipo() {
-        return tipo;
+    public String getType() {
+        return type;
     }
 
     public String getTimestamp() {
@@ -57,8 +59,8 @@ public class Incidencia
 
     //------------------------------- METODOS MODIFICADORES --------------------------------------//
 
-    public void setEstado(boolean estado) {
-        this.estado = estado;
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 
     public void setLat(double lat) {
@@ -73,8 +75,8 @@ public class Incidencia
         this.timestamp = timestamp;
     }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
+    public void setType(String type) {
+        this.type = type;
     }
     //------------------------------- FIN METODOS MODIFICADORES ----------------------------------//
 
