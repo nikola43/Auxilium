@@ -20,6 +20,18 @@
         app:layout_anchorGravity="right|center"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/layerSelector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:fabSize="mini"
+        app:layout_anchor="@+id/toolbar"
+        app:layout_anchorGravity="right|bottom"
+        app:srcCompat="@drawable/ic_select_layer"
+        android:background="@android:color/white"/>
+
     <!-- Toolbar -->
     <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/toolbar"

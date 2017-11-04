@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity
     private GoogleApiClient mGoogleApiClient;
     private int PLACE_PICKER_REQUEST = 1;
     FloatingActionButton fabPickPlace;
+    FloatingActionButton fabLayerSelect;
 
     private GoogleMap mMap;
     int status;
@@ -130,6 +131,17 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
+        fabLayerSelect = findViewById(R.id.layerSelector);
+
+        fabLayerSelect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                showLayerSelectionDialog();
+            }
+        });
+
 
         //Drawer menu reference and initialization
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -523,7 +535,7 @@ public class MainActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        
+
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
@@ -671,4 +683,30 @@ public class MainActivity extends AppCompatActivity
         public void onProviderDisabled(String s) {
         }
     };
+
+    public void showLayerSelectionDialog() {
+
+        final CharSequence[] items = new CharSequence[4];
+
+        items[0] = "Normal";
+        items[1] = "Terreno";
+        items[2] = "Satelite";
+        items[3] = "Híbrido";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Seleccione un tipo de mapa")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which)
+                        {
+                            case 0 : mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL); break;
+                            case 1 : mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN); break;
+                            case 2 : mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE); break;
+                            case 3 : mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID); break;
+                        }
+                    }
+                });
+        builder.show();
+        //return builder.create();
+    }
 }
