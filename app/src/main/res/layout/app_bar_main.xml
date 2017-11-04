@@ -10,36 +10,66 @@
         android:id="@+id/include"
         layout="@layout/content_main" />
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
-        app:layout_anchor="@+id/include"
-        app:layout_anchorGravity="right|center"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/layerSelector"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
-        app:fabSize="mini"
-        app:layout_anchor="@+id/toolbar"
-        app:layout_anchorGravity="right|bottom"
-        app:srcCompat="@drawable/ic_select_layer"
-        android:background="@android:color/white"/>
-
-    <!-- Toolbar -->
-    <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/toolbar"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="#7fffffff"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ToolbarBlackIcons" />
+        android:layout_height="match_parent"
+        android:id="@+id/mainLayout">
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignBottom="@+id/fab"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                tools:context="com.pinillos.auxilium.MapsActivity"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="0dp" />
+
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/layerSelector"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/toolbar"
+                android:layout_gravity="bottom|end"
+                android:layout_marginTop="21dp"
+                android:background="@android:color/white"
+                app:fabSize="mini"
+                app:layout_anchor="@+id/toolbar"
+                app:layout_anchorGravity="right|bottom"
+                app:srcCompat="@drawable/ic_select_layer" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="55dp"
+                app:layout_anchorGravity="right|center"
+                app:srcCompat="@android:drawable/ic_dialog_email" />
+
+            <!-- Toolbar -->
+            <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="#7fffffff"
+                app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+                app:theme="@style/ToolbarBlackIcons" />
+
+        </RelativeLayout>
+
+    </FrameLayout>
 
 </android.support.design.widget.CoordinatorLayout>

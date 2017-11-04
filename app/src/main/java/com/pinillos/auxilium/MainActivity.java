@@ -20,6 +20,8 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -279,7 +281,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         //Add support to map fragment
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        final SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         //Bottom navigation
@@ -288,13 +290,21 @@ public class MainActivity extends AppCompatActivity
                 new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+
+                        Fragment fragment = new IncidenceFragment();
+
                         switch (item.getItemId())
                         {
                             case R.id.action_favorites:
                                 toastMessage("menu_uno");
+                                getSupportFragmentManager().beginTransaction().replace(R.id.incidenceLayout, getSupportFragmentManager().findFragmentById(R.id.map)).commit();
                                 break;
                             case R.id.action_schedules:
                                 toastMessage("menu_dos");
+
+
+
+                                getSupportFragmentManager().beginTransaction().replace(R.id.mainLayout, fragment).commit();
                                 break;
                             case R.id.action_music:
                                 toastMessage("menu_tres");
