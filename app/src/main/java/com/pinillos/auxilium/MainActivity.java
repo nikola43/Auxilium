@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -57,6 +58,8 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
@@ -67,10 +70,7 @@ public class MainActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference myRef;
-    private String userID;
     private FirebaseUser user;
-    private String idObjeto;
-
 
 
     private GoogleApiClient mGoogleApiClient;
@@ -97,6 +97,29 @@ public class MainActivity extends AppCompatActivity
                 .addApi(Places.PLACE_DETECTION_API)
                 .enableAutoManage(this, this)
                 .build();
+
+
+        BottomNavigationView bottomNavigationView = (BottomNavigationView)
+                findViewById(R.id.bottom_navigation);
+
+        bottomNavigationView.setOnNavigationItemSelectedListener(
+                new BottomNavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                        switch (item.getItemId()) {
+                            case R.id.action_favorites:
+                                toastMessage("menu_uno");
+                                break;
+                            case R.id.action_schedules:
+                                toastMessage("menu_dos");
+                                break;
+                            case R.id.action_music:
+                                toastMessage("menu_tres");
+                                break;
+                        }
+                        return false;
+                    }
+                });
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -136,8 +159,8 @@ public class MainActivity extends AppCompatActivity
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         myRef = mFirebaseDatabase.getInstance().getReference( );
         user = mAuth.getCurrentUser();
-        userID = user.getUid();
-        idObjeto = myRef.push().getKey();
+        String userID = user.getUid();
+        String idObjeto = myRef.push().getKey();
 
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -717,13 +740,6 @@ public class MainActivity extends AppCompatActivity
 
         //Write incidence to firebase database
         myRef.child(incidenceID).setValue(incidence);
-
-        FirebaseMessaging firebaseMessaging = FirebaseMessaging.getInstance();
-
-        firebaseMessaging.send(new RemoteMessage.Builder(userID)
-                        .setMessageId("2")
-                        .addData("key", "value")
-                        .build());
 
     }
 
