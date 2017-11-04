@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,6 +30,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -80,10 +84,7 @@ public class MainActivity extends AppCompatActivity
     private GoogleMap mMap;
     int status;
 
-    LocationManager locationManager;
-    double longitudeBest, latitudeBest;
     double longitudeGPS, latitudeGPS;
-    double longitudeNetwork, latitudeNetwork;
 
 
     @Override
@@ -91,6 +92,15 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Window window = getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+        }
+
+
+        //Instace api client
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
                 .addApi(Places.GEO_DATA_API)
@@ -98,45 +108,21 @@ public class MainActivity extends AppCompatActivity
                 .enableAutoManage(this, this)
                 .build();
 
-
-        BottomNavigationView bottomNavigationView = (BottomNavigationView)
-                findViewById(R.id.bottom_navigation);
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(
-                new BottomNavigationView.OnNavigationItemSelectedListener() {
-                    @Override
-                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                        switch (item.getItemId()) {
-                            case R.id.action_favorites:
-                                toastMessage("menu_uno");
-                                break;
-                            case R.id.action_schedules:
-                                toastMessage("menu_dos");
-                                break;
-                            case R.id.action_music:
-                                toastMessage("menu_tres");
-                                break;
-                        }
-                        return false;
-                    }
-                });
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //Reference toolbar UI
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        fabPickPlace = (FloatingActionButton) findViewById(R.id.fab);
+        //Reference floating button
+        fabPickPlace = findViewById(R.id.fab);
+
+        //create incidence
         fabPickPlace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //toastMessage("Crear incidencia");
-
-
-
-
 
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-
-
                 try {
                     startActivityForResult(builder.build(MainActivity.this), PLACE_PICKER_REQUEST);
                 } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
@@ -145,58 +131,80 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        //Drawer menu reference and initialization
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        //Navigation view reference and initialization
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 
+
+        //instace firebase auth and database
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         myRef = mFirebaseDatabase.getInstance().getReference( );
         user = mAuth.getCurrentUser();
-        String userID = user.getUid();
-        String idObjeto = myRef.push().getKey();
 
 
+        //User login
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    // User is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                    //toastMessage("Successfully signed in with: " + user.getEmail());
                 } else {
-                    // User is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
-                    //toastMessage("Successfully signed out.");
                 }
-                // ...
             }
         };
 
+        //Add firebase event listener
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
+                int incidenceIcon;
 
+                //first clear map
                 mMap.clear();
 
+                //retrieve data from database
                 for (DataSnapshot dbObjects : dataSnapshot.getChildren())
                 {
                     String objectType = dbObjects.getKey();
 
                     for (DataSnapshot currentItem : dbObjects.getChildren())
                     {
+                        //if retrieved database object are incident type
                         if ( objectType.equals("incidence") )
                         {
+                            //retrieve incidence object from database
                             String incidenceID = currentItem.getKey();
                             Incidence incidence = currentItem.getValue(Incidence.class);
+
+                            //according to incidence type, shows different icon
+                            switch (incidence.getType())
+                            {
+                                case "Incendio" : incidenceIcon = R.mipmap.ic_incendio_round; break;
+                                case "Corte luz": incidenceIcon = R.mipmap.ic_electrico_round; break;
+                                default: incidenceIcon = R.mipmap.ic_incendio_round; break;
+                            }
+
+                            //if the incidence is activated, add google maps marker
+                            if ( incidence.getStatus() )
+                            {
+                                mMap.addMarker(new MarkerOptions()
+                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                        .title(incidence.getType())
+                                        .snippet("Creada por "+incidence.getCreatorID())
+                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                        .draggable(true));
+                            }
 
                             /*
                             toastMessage
@@ -210,33 +218,22 @@ public class MainActivity extends AppCompatActivity
                                 incidence.getType()
                             );
                             */
-
-                            LatLng incidenceLatLon = new LatLng(incidence.getLat(), incidence.getLon());
-
-                            int incidenceIcon = 0;
-
-                            switch (incidence.getType())
-                            {
-                                case "Incendio" : incidenceIcon = R.mipmap.ic_incendio_round; break;
-                                case "Corte luz": incidenceIcon = R.mipmap.ic_electrico_round; break;
-                                default: incidenceIcon = R.mipmap.ic_incendio_round; break;
-                            }
-
-                            if ( incidence.getStatus() )
-                            {
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(incidenceLatLon)
-                                        .title(incidence.getType())
-                                        .snippet("Creada por "+incidence.getCreatorID())
-                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                        .draggable(true));
-                            }
                         }
 
+                        //if retrieved database object are position type
                         if ( objectType.equals("position"))
                         {
+
+                            //retrieve position object from database
                             String positionID = currentItem.getKey();
                             Position position = currentItem.getValue(Position.class);
+
+                            //add user position marker
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(position.getLat(), position.getLon()))
+                                    .title(position.getCreatorID())
+                                    .snippet("Lat: "+ position.getLat()+ " Lon: "+position.getLon()));
+
                             /*
                             toastMessage
                                     (
@@ -247,113 +244,9 @@ public class MainActivity extends AppCompatActivity
 
                                     );
                             */
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(new LatLng(position.getLat(), position.getLon()))
-                                    .title(position.getCreatorID())
-                                    .snippet("Lat: "+ position.getLat()+ " Lon: "+position.getLon()));
                         }
-
-
-
-
-
-
                     }
-
-                    //toastMessage(myRef.child(posicion.getKey()).push().getKey());
-
-
-
-
-
-
-
-
-
-/*
-
-                    if ( tipoDato.equals("incidence") )
-                    {
-                        String idObjeto = posicion.child(tipoDato).getKey();
-                        toastMessage(idObjeto);
-                        Incidence incidence = posicion.getValue(Incidence.class);
-                        toastMessage
-                                (
-                                        //incidenceID+"\n"+
-                                                incidence.getCreatorID()+"\n"+
-                                                incidence.getLat()+"\n"+
-                                                incidence.getLon()+"\n"+
-                                                incidence.getStatus()+"\n"+
-                                                incidence.getTimestamp()+"\n"+
-                                                incidence.getType()
-                                );
-                    }
-
-                    Position position = posicion.getValue(Position.class);
-
-                    //toastMessage(String.valueOf(incidenceID));
-
-*/
-                    /*
-                    toastMessage
-                            (
-                                    incidenceID + "\n" +
-                                            position.getTimestamp() + "\n" +
-                                            position.getLat() + "\n" +
-                                            position.getLon()
-
-                            );
-                    */
                 }
-
-                /*
-                for (DataSnapshot incidenciaSnapShot : dataSnapshot.getChildren())
-                {
-                    String incidenceID = incidenciaSnapShot.getKey();
-                    Incidence incidence = incidenciaSnapShot.getValue(Incidence.class);
-                    Position position = incidenciaSnapShot.getValue(Position.class);
-
-
-
-                    toastMessage
-                    (
-                            incidenceID+"\n"+
-                            incidence.getCreatorID()+"\n"+
-                            incidence.getLat()+"\n"+
-                            incidence.getLon()+"\n"+
-                            incidence.getStatus()+"\n"+
-                            incidence.getTimestamp()+"\n"+
-                            incidence.getType()
-                    );
-
-
-
-                    LatLng incidenceLatLon = new LatLng(incidence.getLat(), incidence.getLon());
-
-                    int incidenceIcon = 0;
-
-                    switch (incidence.getType())
-                    {
-                        case "Incendio" : incidenceIcon = R.mipmap.ic_incendio_round; break;
-                        case "Corte luz": incidenceIcon = R.mipmap.ic_electrico_round; break;
-                        default: incidenceIcon = R.mipmap.ic_incendio_round; break;
-                    }
-
-                    if ( incidence.getStatus() )
-                    {
-                        mMap.addMarker(new MarkerOptions()
-                                .position(incidenceLatLon)
-                                .title(incidence.getType())
-                                .snippet("ID: "+incidenceID)
-                                .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                .draggable(true));
-                    }
-
-                }
-                */
-
-
-
             }
 
             @Override
@@ -364,6 +257,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        //get google play services status
         status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
         if (status != ConnectionResult.SUCCESS) {
             if (GooglePlayServicesUtil.isUserRecoverableError(status)) {
@@ -372,9 +266,31 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        //Add support to map fragment
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        //Bottom navigation
+        BottomNavigationView bottomNavigationView =  findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(
+                new BottomNavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                        switch (item.getItemId())
+                        {
+                            case R.id.action_favorites:
+                                toastMessage("menu_uno");
+                                break;
+                            case R.id.action_schedules:
+                                toastMessage("menu_dos");
+                                break;
+                            case R.id.action_music:
+                                toastMessage("menu_tres");
+                                break;
+                        }
+                        return false;
+                    }
+                });
 
     }
 
@@ -607,19 +523,7 @@ public class MainActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        mMap.setMyLocationEnabled(true);
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng());
-
-        /*
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                toastMessage("click marker");
-                return true;
-            }
-        });
-        */
-
+        
         mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {
