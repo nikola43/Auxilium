@@ -1,21 +1,31 @@
 package com.pinillos.auxilium;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -34,6 +44,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -41,6 +52,15 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
@@ -48,10 +68,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -59,28 +82,40 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.RemoteMessage;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.squareup.picasso.Picasso;
 
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
+        implements NavigationView.OnNavigationItemSelectedListener, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        LocationListener, ResultCallback<Status>, GoogleMap.OnInfoWindowClickListener {
 
-    private static final String TAG = "LoginActivity";
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     private FirebaseDatabase mFirebaseDatabase;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference myRef;
     private FirebaseUser user;
+    private StorageReference mStorageRef;
 
 
+    // Location API
     private GoogleApiClient mGoogleApiClient;
+    private LocationRequest mLocationRequest;
+    private LocationSettingsRequest mLocationSettingsRequest;
+    private Location mLastLocation;
     private int PLACE_PICKER_REQUEST = 1;
+
+
     FloatingActionButton fabPickPlace;
     FloatingActionButton fabLayerSelect;
 
@@ -90,26 +125,54 @@ public class MainActivity extends AppCompatActivity
     double longitudeGPS, latitudeGPS;
 
 
+    private static final String LOCATION_KEY = "location-key";
+    private static final String ACTIVITY_KEY = "activity-key";
+
+
+    // Activity Recognition API
+    private ActivityDetectionBroadcastReceiver mBroadcastReceiver;
+    @DrawableRes
+    private int mImageResource = R.drawable.ic_pool;
+
+    // Códigos de petición
+    public static final int REQUEST_LOCATION = 1;
+    public static final int REQUEST_CHECK_SETTINGS = 2;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Window window = getWindow();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(Color.TRANSPARENT);
-        }
-
-
-        //Instace api client
-        mGoogleApiClient = new GoogleApiClient
-                .Builder(this)
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
                 .addApi(Places.GEO_DATA_API)
                 .addApi(Places.PLACE_DETECTION_API)
                 .enableAutoManage(this, this)
                 .build();
+
+
+        // Establecer punto de entrada para la API de ubicación
+        //buildGoogleApiClient();
+
+        // Crear configuración de peticiones
+        createLocationRequest();
+
+        // Crear opciones de peticiones
+        buildLocationSettingsRequest();
+
+        // Verificar ajustes de ubicación actuales
+        checkLocationSettings();
+
+        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+
+        updateValuesFromBundle(savedInstanceState);
+
+
+
 
         //Reference toolbar UI
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -156,12 +219,12 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
 
-
         //instace firebase auth and database
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        myRef = mFirebaseDatabase.getInstance().getReference( );
+        myRef = mFirebaseDatabase.getInstance().getReference();
         user = mAuth.getCurrentUser();
+        mStorageRef = FirebaseStorage.getInstance().getReference();
 
 
         //User login
@@ -183,42 +246,48 @@ public class MainActivity extends AppCompatActivity
             public void onDataChange(DataSnapshot dataSnapshot) {
 
                 int incidenceIcon;
-
+                Bitmap bitmapCopia = null;
+                
                 //first clear map
                 mMap.clear();
 
                 //retrieve data from database
-                for (DataSnapshot dbObjects : dataSnapshot.getChildren())
-                {
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
                     String objectType = dbObjects.getKey();
 
-                    for (DataSnapshot currentItem : dbObjects.getChildren())
-                    {
+                    for (DataSnapshot currentItem : dbObjects.getChildren()) {
                         //if retrieved database object are incident type
-                        if ( objectType.equals("incidence") )
-                        {
+                        if (objectType.equals("incidence")) {
                             //retrieve incidence object from database
                             String incidenceID = currentItem.getKey();
                             Incidence incidence = currentItem.getValue(Incidence.class);
 
                             //according to incidence type, shows different icon
-                            switch (incidence.getType())
-                            {
-                                case "Incendio" : incidenceIcon = R.mipmap.ic_incendio_round; break;
-                                case "Corte luz": incidenceIcon = R.mipmap.ic_electrico_round; break;
-                                default: incidenceIcon = R.mipmap.ic_incendio_round; break;
+                            switch (incidence.getType()) {
+                                case "Incendio":
+                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                    break;
+                                case "Corte luz":
+                                    incidenceIcon = R.mipmap.ic_electrico_round;
+                                    break;
+                                default:
+                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                    break;
                             }
 
+
+
                             //if the incidence is activated, add google maps marker
-                            if ( incidence.getStatus() )
-                            {
+                            if (incidence.getStatus()) {
                                 mMap.addMarker(new MarkerOptions()
                                         .position(new LatLng(incidence.getLat(), incidence.getLon()))
                                         .title(incidence.getType())
-                                        .snippet("Creada por "+incidence.getCreatorID())
+                                        .snippet("Creada por " + incidence.getCreatorID())
                                         .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
                                         .draggable(true));
                             }
+
+
 
                             /*
                             toastMessage
@@ -232,23 +301,61 @@ public class MainActivity extends AppCompatActivity
                                 incidence.getType()
                             );
                             */
+
                         }
 
                         //if retrieved database object are position type
-                        if ( objectType.equals("position"))
-                        {
+                        if (objectType.equals("position")) {
 
                             //retrieve position object from database
                             String positionID = currentItem.getKey();
-                            Position position = currentItem.getValue(Position.class);
+                            final Position position = currentItem.getValue(Position.class);
 
-                            //add user position marker
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(new LatLng(position.getLat(), position.getLon()))
-                                    .title(position.getCreatorID())
-                                    .snippet("Lat: "+ position.getLat()+ " Lon: "+position.getLon()));
+                            StorageReference islandRef = mStorageRef.child("images/pauloxtiPhoto.png");
+                            File localFile = null;
+                            try {
+                                localFile = File.createTempFile("images", "png");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            final File finalLocalFile = localFile;
+                            islandRef.getFile(localFile)
+                                    .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                            // Successfully downloaded data to local file
+                                            // ...
 
-                            /*
+
+                                            Bitmap bitmap = BitmapFactory.decodeFile(finalLocalFile.getAbsolutePath());
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(position.getLat(), position.getLon()))
+                                                    .title(position.getCreatorID())
+                                                    .snippet("Lat: " + position.getLat() + " Lon: " + position.getLon())
+                                                    .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
+
+
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception exception) {
+                                    // Handle failed download
+                                    // ...
+                                }
+                            });
+
+
+
+
+
+
+                                //add user position marker
+
+
+
+
+
+
                             toastMessage
                                     (
                                                     "usuario: "+ position.getCreatorID()+"\n"+
@@ -257,7 +364,7 @@ public class MainActivity extends AppCompatActivity
                                                     position.getLon()
 
                                     );
-                            */
+
                         }
                     }
                 }
@@ -285,7 +392,7 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         //Bottom navigation
-        BottomNavigationView bottomNavigationView =  findViewById(R.id.bottom_navigation);
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnNavigationItemSelectedListener(
                 new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
@@ -293,15 +400,13 @@ public class MainActivity extends AppCompatActivity
 
                         Fragment fragment = new IncidenceFragment();
 
-                        switch (item.getItemId())
-                        {
+                        switch (item.getItemId()) {
                             case R.id.action_favorites:
                                 toastMessage("menu_uno");
                                 getSupportFragmentManager().beginTransaction().replace(R.id.incidenceLayout, getSupportFragmentManager().findFragmentById(R.id.map)).commit();
                                 break;
                             case R.id.action_schedules:
                                 toastMessage("menu_dos");
-
 
 
                                 getSupportFragmentManager().beginTransaction().replace(R.id.mainLayout, fragment).commit();
@@ -372,22 +477,16 @@ public class MainActivity extends AppCompatActivity
                 // for ActivityCompat#requestPermissions for more details.
 
             }
+            /*
             LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             Location myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             LatLng myLocationLatLon = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
 
 
-
-             mMap.addMarker(new MarkerOptions()
-                    .position(myLocationLatLon)
-                    .title(user.getEmail()));
-
             myRef = mFirebaseDatabase.getInstance().getReference("position");
             String posicionID = myRef.push().getKey();
-            Position myPosition =  new Position(user.getEmail(),latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+            Position myPosition = new Position(user.getEmail(), latitudeGPS, longitudeGPS, getCurrentTimeStamp());
             myRef.child(posicionID).setValue(myPosition);
-
-
 
 
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocationLatLon, 15.0f));
@@ -408,7 +507,7 @@ public class MainActivity extends AppCompatActivity
 
                     myRef = mFirebaseDatabase.getInstance().getReference("position");
                     String posicionID = myRef.push().getKey();
-                    Position myPosition =  new Position(user.getEmail(),latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+                    Position myPosition = new Position(user.getEmail(), latitudeGPS, longitudeGPS, getCurrentTimeStamp());
                     myRef.child(posicionID).setValue(myPosition);
                 }
 
@@ -428,6 +527,7 @@ public class MainActivity extends AppCompatActivity
                 }
 
             });
+            */
 
 
         } else if (id == R.id.nav_gallery) {
@@ -452,8 +552,6 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-
-
     @Override
     public void onStart() {
         super.onStart();
@@ -473,12 +571,213 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Snackbar.make(fabPickPlace, connectionResult.getErrorMessage() + "", Snackbar.LENGTH_LONG).show();
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mMap.setOnInfoWindowClickListener(this);
+        mMap.setMyLocationEnabled(true);
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
+                toastMessage(marker.getPosition().latitude + " " + marker.getPosition().longitude);
+            }
+        });
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Incidence creada por: \n" +
+                "Titulo: " + marker.getTitle() + "\n" +
+                "Descripcion: " + marker.getSnippet() + "\n" +
+                "Numero: " + marker.getId() + "\n" +
+                "Latitud: " + marker.getPosition().latitude + "\n" +
+                "Longitud: " + marker.getPosition().longitude + "\n")
+                .setPositiveButton("Terminar incidencia", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        toastMessage("navegacion");
+                    }
+                })
+                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        toastMessage("cancelado");
+                    }
+                });
+        // Create the AlertDialog object and return it
+        builder.show();
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+
+    }
+
+    public static String getCurrentTimeStamp() {
+        try {
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String currentDateTime = dateFormat.format(new Date()); // Find todays date
+
+            return currentDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+
+
+    public String seleccionarTipoIncidencia() {
+
+        final Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message mesg) {
+                throw new RuntimeException();
+            }
+        };
+
+        final String tipos_incidencias[] = new String[8];
+        tipos_incidencias[0] = "Terremoto";
+        tipos_incidencias[1] = "Incendio";
+        tipos_incidencias[2] = "Corte luz";
+        tipos_incidencias[3] = "Accidente";
+        tipos_incidencias[4] = "AAAAAAAAA";
+        tipos_incidencias[5] = "BBBBBBBBB";
+        tipos_incidencias[6] = "BBBBBBBBB";
+        tipos_incidencias[7] = "BBBBBBBBB";
+
+        final String[] seleccionado = new String[1];
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        seleccionado[0] = tipos_incidencias[which];
+                        handler.sendMessage(handler.obtainMessage());
+
+                    }
+                });
+        builder.show();
+        try {
+            Looper.loop();
+        } catch (RuntimeException e) {
+        }
+
+        return seleccionado[0];
+
+    }
+
+    private void readIncidenceFromFirebase() {
+        Incidence incidence = new Incidence();
+    }
+
+    /*
+
+     */
+    private void writeIncidenceToFirebase(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
+
+        myRef = mFirebaseDatabase.getInstance().getReference("incidence");
+        String incidenceID = myRef.push().getKey();
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType);
+
+        //Write incidence to firebase database
+        myRef.child(incidenceID).setValue(incidence);
+
+    }
+
+    public void showLayerSelectionDialog() {
+
+        final CharSequence[] items = new CharSequence[4];
+
+        items[0] = "Normal";
+        items[1] = "Terreno";
+        items[2] = "Satelite";
+        items[3] = "Híbrido";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Seleccione un tipo de mapa")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                                break;
+                            case 1:
+                                mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+                                break;
+                            case 2:
+                                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+                                break;
+                            case 3:
+                                mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                                break;
+                        }
+                    }
+                });
+        builder.show();
+        //return builder.create();
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        // Obtenemos la última ubicación al ser la primera vez
+        processLastLocation();
+        // Iniciamos las actualizaciones de ubicación
+        startLocationUpdates();
+        // Y también las de reconocimiento de actividad
+        startActivityUpdates();
+
+        if (mLastLocation != null) {
+            //mLatitude.setText(String.valueOf(mLastLocation.getLatitude()));
+            //mLongitude.setText(String.valueOf(mLastLocation.getLongitude()));
+            //toastMessage(mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+        } else {
+            Toast.makeText(this, "Ubicación no encontrada", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // Protegemos la ubicación actual antes del cambio de configuración
+        outState.putParcelable(LOCATION_KEY, mLastLocation);
+        outState.putInt(ACTIVITY_KEY, mImageResource);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
         if (requestCode == PLACE_PICKER_REQUEST) {
             if (resultCode == RESULT_OK) {
                 Place place = PlacePicker.getPlace(data, this);
@@ -510,213 +809,290 @@ public class MainActivity extends AppCompatActivity
                 // Cogemos la posicion de la incidencia
                 LatLng posicionIncidencia = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
 
-                int iconoIncidencia = 0;
-
-                switch (tipoIncidencia)
-                {
-                    case "Incendio" : iconoIncidencia = R.mipmap.ic_incendio_round; break;
-                    case "Corte luz": iconoIncidencia = R.mipmap.ic_electrico_round; break;
-                    default: iconoIncidencia = R.mipmap.ic_incendio_round; break;
-                }
-
-                //Añadimos marcador
-                mMap.addMarker(new MarkerOptions()
-                        .position(posicionIncidencia)
-                        .title(tipoIncidencia)
-                        .snippet("Creada por " + user.getEmail())
-                        .icon(BitmapDescriptorFactory.fromResource(iconoIncidencia))
-                        .draggable(true));
-
                 //Movemos la camara al marcador
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(posicionIncidencia));
 
                 //Write incidence to database
-                writeIncidenceToFirebase(user.getEmail(),posicionIncidencia.latitude, posicionIncidencia.longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                writeIncidenceToFirebase(user.getEmail(), posicionIncidencia.latitude, posicionIncidencia.longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+            }
+        }
+
+        switch (requestCode) {
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        Log.d(TAG, "El usuario permitió el cambio de ajustes de ubicación.");
+                        processLastLocation();
+                        startLocationUpdates();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        Log.d(TAG, "El usuario no permitió el cambio de ajustes de ubicación");
+                        break;
+                }
+                break;
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode,
+                                           String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == REQUEST_LOCATION) {
+            if (grantResults.length == 1
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                startLocationUpdates();
+
+            } else {
+                Toast.makeText(this, "Permisos no otorgados", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+    private synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
+                .enableAutoManage(this, this)
+                .build();
+    }
 
-        mMap.setOnInfoWindowClickListener(this);
+    private void createLocationRequest() {
+        mLocationRequest = new LocationRequest()
+                .setInterval(Constants.UPDATE_INTERVAL)
+                .setFastestInterval(Constants.UPDATE_FASTEST_INTERVAL)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
+    private void buildLocationSettingsRequest() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest)
+                .setAlwaysShow(true);
+        mLocationSettingsRequest = builder.build();
+    }
 
-        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+    private void checkLocationSettings() {
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(
+                        mGoogleApiClient, mLocationSettingsRequest
+                );
+
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
             @Override
-            public void onMarkerDragStart(Marker marker) {
+            public void onResult(@NonNull LocationSettingsResult result) {
+                Status status = result.getStatus();
 
-            }
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        Log.d(TAG, "Los ajustes de ubicación satisfacen la configuración.");
+                        startLocationUpdates();
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        try {
+                            Log.d(TAG, "Los ajustes de ubicación no satisfacen la configuración. " +
+                                    "Se mostrará un diálogo de ayuda.");
+                            status.startResolutionForResult(
+                                    MainActivity.this,
+                                    REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.d(TAG, "El Intent del diálogo no funcionó.");
+                            // Sin operaciones
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.d(TAG, "Los ajustes de ubicación no son apropiados.");
+                        break;
 
-            @Override
-            public void onMarkerDrag(Marker marker) {
-
-            }
-
-            @Override
-            public void onMarkerDragEnd(Marker marker) {
-                toastMessage(marker.getPosition().latitude+" "+marker.getPosition().longitude);
+                }
             }
         });
     }
 
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Incidence creada por: \n"+
-                           "Titulo: "+marker.getTitle()+"\n"+
-                           "Descripcion: "+marker.getSnippet()+"\n"+
-                           "Numero: "+marker.getId()+"\n"+
-                           "Latitud: "+marker.getPosition().latitude+"\n"+
-                           "Longitud: "+marker.getPosition().longitude+"\n")
-                .setPositiveButton("Terminar incidencia", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        toastMessage("navegacion");
-                    }
-                })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        toastMessage("cancelado");
-                    }
-                });
-        // Create the AlertDialog object and return it
-        builder.show();
-    }
+    private void updateValuesFromBundle(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(LOCATION_KEY)) {
+                mLastLocation = savedInstanceState.getParcelable(LOCATION_KEY);
 
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
-
-    public static String getCurrentTimeStamp(){
-        try {
-
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String currentDateTime = dateFormat.format(new Date()); // Find todays date
-
-            return currentDateTime;
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            return null;
-        }
-    }
-
-
-
-    public String seleccionarTipoIncidencia()
-    {
-
-        final Handler handler = new Handler()
-        {
-            @Override
-            public void handleMessage(Message mesg)
-            {
-                throw new RuntimeException();
+                updateLocationUI();
             }
-        };
 
-        final String tipos_incidencias[] = new String[8];
-        tipos_incidencias[0] = "Terremoto";
-        tipos_incidencias[1] = "Incendio";
-        tipos_incidencias[2] = "Corte luz";
-        tipos_incidencias[3] = "Accidente";
-        tipos_incidencias[4] = "AAAAAAAAA";
-        tipos_incidencias[5] = "BBBBBBBBB";
-        tipos_incidencias[6] = "BBBBBBBBB";
-        tipos_incidencias[7] = "BBBBBBBBB";
+            if (savedInstanceState.containsKey(ACTIVITY_KEY)) {
+                mImageResource = savedInstanceState.getInt(ACTIVITY_KEY);
 
-        final String[] seleccionado = new String[1];
+                updateRecognitionUI();
+            }
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("Selecciona el tipo de la incidencia: ")
-                .setItems(tipos_incidencias, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        seleccionado[0] = tipos_incidencias[which];
-                        handler.sendMessage(handler.obtainMessage());
+        }
+    }
 
+    private void updateLocationUI() {
+        //toastMessage(mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+        //mLatitude.setText(String.valueOf(mLastLocation.getLatitude()));
+        //mLongitude.setText(String.valueOf(mLastLocation.getLongitude()));
+    }
+
+    private void updateRecognitionUI() {
+        //mDectectedActivityIcon.setImageResource(mImageResource);
+    }
+
+    private void stopActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
+                mGoogleApiClient,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
+
+    private void stopLocationUpdates() {
+        LocationServices.FusedLocationApi
+                .removeLocationUpdates(mGoogleApiClient, new com.google.android.gms.location.LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        toastMessage("a"+location.toString());
                     }
                 });
-        builder.show();
-        try{ Looper.loop(); }
-        catch(RuntimeException e){}
-
-        return  seleccionado[0];
-
     }
 
-    private void readIncidenceFromFirebase()
-    {
-        Incidence incidence = new Incidence();
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    /*
-
-     */
-    private void writeIncidenceToFirebase(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
-
-        myRef = mFirebaseDatabase.getInstance().getReference("incidence");
-        String incidenceID = myRef.push().getKey();
-        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType);
-
-        //Write incidence to firebase database
-        myRef.child(incidenceID).setValue(incidence);
-
+    private void getLastLocation() {
+        if (isLocationPermissionGranted()) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        } else {
+            manageDeniedPermission();
+        }
     }
 
-
-    private final LocationListener locationListenerGPS = new LocationListener() {
-        public void onLocationChanged(Location location) {
-            longitudeGPS = location.getLongitude();
-            latitudeGPS = location.getLatitude();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    toastMessage(longitudeGPS+" "+latitudeGPS);
-                    Toast.makeText(MainActivity.this, "GPS Provider update", Toast.LENGTH_SHORT).show();
-                }
-            });
+    private void processLastLocation() {
+        getLastLocation();
+        if (mLastLocation != null) {
+            updateLocationUI();
         }
-        @Override
-        public void onStatusChanged(String s, int i, Bundle bundle) {
-        }
+    }
 
-        @Override
-        public void onProviderEnabled(String s) {
-        }
-        @Override
-        public void onProviderDisabled(String s) {
-        }
-    };
+    private void startActivityUpdates() {
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                mGoogleApiClient,
+                Constants.ACTIVITY_RECOGNITION_INTERVAL,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
 
-    public void showLayerSelectionDialog() {
+    private void startLocationUpdates() {
+        if (isLocationPermissionGranted()) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    mGoogleApiClient, mLocationRequest, new com.google.android.gms.location.LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            Log.d(TAG, String.format("Nueva ubicación: (%s, %s)",
+                                    location.getLatitude(), location.getLongitude()));
+                            mLastLocation = location;
 
-        final CharSequence[] items = new CharSequence[4];
 
-        items[0] = "Normal";
-        items[1] = "Terreno";
-        items[2] = "Satelite";
-        items[3] = "Híbrido";
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Seleccione un tipo de mapa")
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which)
-                        {
-                            case 0 : mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL); break;
-                            case 1 : mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN); break;
-                            case 2 : mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE); break;
-                            case 3 : mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID); break;
+                            myRef = mFirebaseDatabase.getInstance().getReference("position");
+                            String posicionID = myRef.push().getKey();
+                            Position myPosition = new Position(user.getEmail(), location.getLatitude(), location.getLongitude(), getCurrentTimeStamp());
+                            myRef.child(posicionID).setValue(myPosition);
+
+                            //updateLocationUI();
                         }
-                    }
-                });
-        builder.show();
-        //return builder.create();
+                    });
+
+        } else {
+            manageDeniedPermission();
+        }
+    }
+
+    private void manageDeniedPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Aquí muestras confirmación explicativa al usuario
+            // por si rechazó los permisos anteriormente
+        } else {
+            ActivityCompat.requestPermissions(
+                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_LOCATION);
+        }
+    }
+
+    private boolean isLocationPermissionGranted() {
+        int permission = ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permission == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.d(TAG, "Conexión suspendida");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Toast.makeText(
+                this,
+                "Error de conexión con el código:" + connectionResult.getErrorCode(),
+                Toast.LENGTH_LONG)
+                .show();
+        Snackbar.make(fabPickPlace, connectionResult.getErrorMessage() + "", Snackbar.LENGTH_LONG).show();
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d(TAG, String.format("Nueva ubicación: (%s, %s)",
+                location.getLatitude(), location.getLongitude()));
+        mLastLocation = location;
+        toastMessage("a"+mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+        //updateLocationUI();
+    }
+
+
+    @Override
+    public void onResult(@NonNull Status status) {
+        if (status.isSuccess()) {
+            Log.d(TAG, "Detección de actividad iniciada");
+
+        } else {
+            Log.e(TAG, "Error al iniciar/remover la detección de actividad: "
+                    + status.getStatusMessage());
+        }
+    }
+
+    public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int type = intent.getIntExtra(Constants.ACTIVITY_KEY, -1);
+
+            mImageResource = Constants.getActivityIcon(type);
+            updateRecognitionUI();
+        }
+
     }
 }
