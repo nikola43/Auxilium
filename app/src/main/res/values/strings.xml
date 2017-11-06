@@ -15,4 +15,23 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string-array name="groups_array">
+        <item>Director del plan</item>
+        <item>Comité asesor</item>
+        <item>Gabinete de informacíon</item>
+        <item>CECOP-CECOPI</item>
+        <item>PMA</item>
+        <item>Intervención</item>
+        <item>Seguridad</item>
+        <item>Sanitario</item>
+        <item>Logístico</item>
+        <item>Apoyo Técnico</item>
+    </string-array>
+
+    <string-array name="categories_array">
+        <item>Medico</item>
+        <item>Bombero</item>
+        <item>Rescate</item>
+    </string-array>
 </resources>

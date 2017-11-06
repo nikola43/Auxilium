@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -28,6 +29,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // UI references
     private EditText mEmail, mPassword;
+    private TextView signUpText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +60,7 @@ public class LoginActivity extends AppCompatActivity {
         //Reference UI items
         mEmail = findViewById(R.id.email);
         mPassword = findViewById(R.id.password);
+        signUpText = findViewById(R.id.singUpText);
 }
 
     @Override
@@ -76,9 +79,16 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    public void goToSignUpNewUserActivity(View view)
+    {
+        //Go to signUpNewUser activity
+        Intent intent = new Intent(LoginActivity.this, SignUpNewUserActivity.class);
+        startActivity(intent);
+    }
 
 
-    public void loguearse(View view)
+
+    public void logIn(View view)
     {
         String email = mEmail.getText().toString();
         String pass = mPassword.getText().toString();

@@ -81,6 +81,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity
     int status;
 
     double longitudeGPS, latitudeGPS;
+    UserInformation userInformation;
 
 
     private static final String LOCATION_KEY = "location-key";
@@ -222,7 +224,7 @@ public class MainActivity extends AppCompatActivity
         //instace firebase auth and database
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        myRef = mFirebaseDatabase.getInstance().getReference();
+        myRef = FirebaseDatabase.getInstance().getReference();
         user = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
 
@@ -244,115 +246,102 @@ public class MainActivity extends AppCompatActivity
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-
-                int incidenceIcon;
-                Bitmap bitmapCopia = null;
-
-                //first clear map
                 mMap.clear();
 
-                //retrieve data from database
-                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
-                    String objectType = dbObjects.getKey();
-                    //toastMessage(objectType);
+                Query query = myRef.orderByKey().limitToLast(1);
+                query.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Position position = null;
 
-                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
-                        String userID = currentUser.getKey();
-                        //toastMessage(userID);
+                        //retrieve data from database
+                        for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                            String objectType = dbObjects.getKey();
+                            //toastMessage(objectType);
 
-                        for (DataSnapshot currentItem : currentUser.getChildren()) {
+                            for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                                final String userID = currentUser.getKey();
+                                //toastMessage(userID);
 
-                            String itemType = currentItem.getKey();
-                            //toastMessage(itemType);
+                                for (DataSnapshot currentItem : currentUser.getChildren()) {
 
-                            for (DataSnapshot currentField : currentItem.getChildren()) {
-
-                                //if retrieved database object are incident type
-                                if (itemType.equals("incidence")) {
-                                    //retrieve incidence object from database
-                                    String incidenceID = currentField.getKey();
-                                    Incidence incidence = currentField.getValue(Incidence.class);
-
-                                    //according to incidence type, shows different icon
-                                    switch (incidence.getType()) {
-                                        case "Incendio":
-                                            incidenceIcon = R.mipmap.ic_incendio_round;
-                                            break;
-                                        case "Corte luz":
-                                            incidenceIcon = R.mipmap.ic_electrico_round;
-                                            break;
-                                        default:
-                                            incidenceIcon = R.mipmap.ic_incendio_round;
-                                            break;
-                                    }
-
-                                    //if the incidence is activated, add google maps marker
-                                    if (incidence.getStatus()) {
-                                        mMap.addMarker(new MarkerOptions()
-                                                .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                .title(incidence.getType())
-                                                .snippet("Creada por " + incidence.getCreatorID())
-                                                .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                .draggable(true));
-                                    }
+                                    String itemType = currentItem.getKey();
+                                    //toastMessage(itemType);
 
 
-                                    /*
-                                    toastMessage(
-                                            incidenceID + "\n" +
-                                                    incidence.getCreatorID() + "\n" +
-                                                    incidence.getLat() + "\n" +
-                                                    incidence.getLon() + "\n" +
-                                                    incidence.getStatus() + "\n" +
-                                                    incidence.getTimestamp() + "\n" +
-                                                    incidence.getType());*/
+                                    for (DataSnapshot currentField : currentItem.getChildren()) {
 
-                                }
-
-
-                                //if retrieved database object are position type
-                                if (objectType.equals("position")) {
-                                    //retrieve position object from database
-                                    String positionID = currentItem.getKey();
-                                    final Position position = currentItem.getValue(Position.class);
-
-                                    StorageReference islandRef = mStorageRef.child("images/pauloxtiPhoto.png");
-                                    File localFile = null;
-                                    try {
-                                        localFile = File.createTempFile("images", "png");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                    final File finalLocalFile = localFile;
-                                    islandRef.getFile(localFile)
-                                            .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                                    // Successfully downloaded data to local file
-                                                    // ...
-
-
-                                                    Bitmap bitmap = BitmapFactory.decodeFile(finalLocalFile.getAbsolutePath());
-                                                    mMap.addMarker(new MarkerOptions()
-                                                            .position(new LatLng(position.getLat(), position.getLon()))
-                                                            .title(position.getCreatorID())
-                                                            .snippet("Lat: " + position.getLat() + " Lon: " + position.getLon())
-                                                            .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
-
-
-                                                }
-                                            }).addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception exception) {
-                                            // Handle failed download
-                                            // ...
+                                        if (itemType.equals("position")) {
+                                            //retrieve position object from database
+                                            String positionID = currentField.getKey();
+                                            position = currentField.getValue(Position.class);
                                         }
-                                    });
+
+                                        if (itemType.equals("information")) {
+                                            userInformation = currentItem.getValue(UserInformation.class);
+                                        }
+
+                                        //if retrieved database object are incident type
+                                        if (itemType.equals("incidence")) {
+                                            //retrieve incidence object from database
+                                            String incidenceID = currentField.getKey();
+                                            Incidence incidence = currentField.getValue(Incidence.class);
+
+                                            //according to incidence type, shows different icon
+                                            int incidenceIcon;
+                                            switch (incidence.getType()) {
+                                                case "Incendio":
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
+                                                case "Corte luz":
+                                                    incidenceIcon = R.mipmap.ic_electrico_round;
+                                                    break;
+                                                default:
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
+                                            }
+
+                                            //if the incidence is activated, add google maps marker
+                                            if (incidence.getStatus()) {
+                                                mMap.addMarker(new MarkerOptions()
+                                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                        .title(incidence.getType())
+                                                        .snippet("Creada por " + incidence.getCreatorID())
+                                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                        .draggable(true));
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
+                        if (position != null)
+                        {
+                            //toastMessage(position.getCreatorID());
+
+                            int userIcon;
+                            switch (userInformation.getCategory())
+                            {
+                                case "Bombero": userIcon = R.mipmap.ic_fireman_round; break;
+                                case "Medico": userIcon = R.mipmap.ic_medical_round; break;
+                                default: userIcon = R.mipmap.ic_fireman_round;
+                            }
+
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(position.getLat(), position.getLon()))
+                                    .title(userInformation.getFirstName()+" "+userInformation.getLastName1())
+                                    .snippet(userInformation.getGroup())
+                                    .icon(BitmapDescriptorFactory.fromResource(userIcon))
+                                    .draggable(true));
+                        }
+
                     }
-                }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
             }
 
 
@@ -693,7 +682,7 @@ public class MainActivity extends AppCompatActivity
         myRef = mFirebaseDatabase.getInstance().getReference();
         String positionID = myRef.push().getKey();
 
-        Position myPosition = new Position(user.getEmail(), latitudeGPS, longitudeGPS, getCurrentTimeStamp());
+        Position myPosition = new Position(user.getEmail(), mLastLocation.getLatitude(), mLastLocation.getLongitude(), getCurrentTimeStamp());
         myRef.child("users").child(user.getUid()).child("position").child(positionID).setValue(myPosition);
     }
 
@@ -945,7 +934,7 @@ public class MainActivity extends AppCompatActivity
                 .removeLocationUpdates(mGoogleApiClient, new com.google.android.gms.location.LocationListener() {
                     @Override
                     public void onLocationChanged(Location location) {
-                        toastMessage("a"+location.toString());
+                        toastMessage("Localizacion On"+location.toString());
                     }
                 });
     }
@@ -1000,6 +989,10 @@ public class MainActivity extends AppCompatActivity
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
+            int GPS_TIME_INTERVAL = 60000; // get gps location every 1 min
+            final int GPS_DISTANCE= 1000; // set the distance value in meter
+
+
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, mLocationRequest, new com.google.android.gms.location.LocationListener() {
                         @Override
@@ -1008,12 +1001,8 @@ public class MainActivity extends AppCompatActivity
                                     location.getLatitude(), location.getLongitude()));
                             mLastLocation = location;
 
-
-
-
-                            //Position myPosition = new Position(user.getEmail(), location.getLatitude(), location.getLongitude(), getCurrentTimeStamp());
-                            writeUserPositionToFirebaseDB(user.getEmail(), location.getLatitude(), location.getLongitude(), getCurrentTimeStamp());
-
+                            //toastMessage("Ultima posicion: "+mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+                            writeUserPositionToFirebaseDB(user.getEmail(), mLastLocation.getLatitude(), mLastLocation.getLongitude(), getCurrentTimeStamp());
                             //updateLocationUI();
                         }
                     });
@@ -1061,10 +1050,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, String.format("Nueva ubicación: (%s, %s)",
-                location.getLatitude(), location.getLongitude()));
+        Log.d(TAG, String.format("Nueva ubicación: (%s, %s)", location.getLatitude(), location.getLongitude()));
         mLastLocation = location;
-        toastMessage("a"+mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
         //updateLocationUI();
     }
 
