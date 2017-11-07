@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main_activity_container"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -45,17 +46,18 @@
                 app:fabSize="mini"
                 app:layout_anchor="@+id/toolbar"
                 app:layout_anchorGravity="right|bottom"
-                app:srcCompat="@drawable/ic_select_layer" />
+                app:srcCompat="@drawable/ic_select_layer"
+                android:onClick="showLayerSelectionDialog"/>
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fab"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
+                android:layout_centerHorizontal="true"
                 android:layout_gravity="bottom|end"
-                android:layout_marginBottom="55dp"
+                android:layout_marginBottom="58dp"
+                android:onClick="createIncidence"
                 app:layout_anchorGravity="right|center"
                 app:srcCompat="@android:drawable/ic_dialog_email" />
 

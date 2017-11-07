@@ -34,4 +34,21 @@
         <item>Bombero</item>
         <item>Rescate</item>
     </string-array>
+
+    <string-array name="incidenceType_array">
+        <item>Terremoto</item>
+        <item>Incendio</item>
+        <item>Corte</item>
+    </string-array>
+
+    <string name="no_location_detected">
+        No location detected. Make sure location is enabled on the device.
+    </string>
+
+    <string name="permission_rationale">Location permission is needed for core functionality</string>
+    <string name="permission_denied_explanation">Permission was denied, but is needed for core functionality.</string>
+    <string name="settings">Settings</string>
+    <string name="startTracking">Iniciar Tracking</string>
+    <string name="stopTracking">Parar Tracking</string>
+
 </resources>
