@@ -10,15 +10,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.location.LocationListener;
-import android.location.LocationManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,7 +24,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -42,9 +34,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -68,13 +57,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -83,15 +69,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.squareup.picasso.Picasso;
 
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -107,6 +89,8 @@ public class MainActivity extends AppCompatActivity
     private DatabaseReference myRef;
     private FirebaseUser user;
     private StorageReference mStorageRef;
+    private boolean trackingIsEnabled;
+    private com.google.android.gms.location.LocationListener locationListener;
 
 
     // Location API
@@ -242,108 +226,108 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
+
         //Add firebase event listener
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 mMap.clear();
 
-                Query query = myRef.orderByKey().limitToLast(1);
-                query.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Position position = null;
+                Position position = null;
+                //retrieve data from database
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                    String objectType = dbObjects.getKey();
+                    //toastMessage(objectType);
 
-                        //retrieve data from database
-                        for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
-                            String objectType = dbObjects.getKey();
-                            //toastMessage(objectType);
+                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                        final String userID = currentUser.getKey();
+                        //toastMessage(userID);
 
-                            for (DataSnapshot currentUser : dbObjects.getChildren()) {
-                                final String userID = currentUser.getKey();
-                                //toastMessage(userID);
+                        for (DataSnapshot currentItem : currentUser.getChildren()) {
 
-                                for (DataSnapshot currentItem : currentUser.getChildren()) {
-
-                                    String itemType = currentItem.getKey();
-                                    //toastMessage(itemType);
+                            String itemType = currentItem.getKey();
+                            //toastMessage(itemType);
 
 
-                                    for (DataSnapshot currentField : currentItem.getChildren()) {
+                            for (DataSnapshot currentField : currentItem.getChildren()) {
 
-                                        if (itemType.equals("position")) {
-                                            //retrieve position object from database
-                                            String positionID = currentField.getKey();
-                                            position = currentField.getValue(Position.class);
-                                        }
 
-                                        if (itemType.equals("information")) {
-                                            userInformation = currentItem.getValue(UserInformation.class);
-                                        }
 
-                                        //if retrieved database object are incident type
-                                        if (itemType.equals("incidence")) {
-                                            //retrieve incidence object from database
-                                            String incidenceID = currentField.getKey();
-                                            Incidence incidence = currentField.getValue(Incidence.class);
+                                if (itemType.equals("position")) {
 
-                                            //according to incidence type, shows different icon
-                                            int incidenceIcon;
-                                            switch (incidence.getType()) {
-                                                case "Incendio":
-                                                    incidenceIcon = R.mipmap.ic_incendio_round;
-                                                    break;
-                                                case "Corte luz":
-                                                    incidenceIcon = R.mipmap.ic_electrico_round;
-                                                    break;
-                                                default:
-                                                    incidenceIcon = R.mipmap.ic_incendio_round;
-                                                    break;
+                                    //retrieve position object from database
+                                    String positionID = currentField.getKey();
+                                    position = currentField.getValue(Position.class);
+
+
+
+                                    if (position != null)
+                                        {
+                                            //toastMessage(position.getCreatorID());
+
+                                            int userIcon;
+                                            switch (userInformation.getCategory())
+                                            {
+                                                case "Bombero": userIcon = R.mipmap.ic_fireman_round; break;
+                                                case "Medico": userIcon = R.mipmap.ic_medical_round; break;
+                                                default: userIcon = R.mipmap.ic_fireman_round;
                                             }
 
-                                            //if the incidence is activated, add google maps marker
-                                            if (incidence.getStatus()) {
-                                                mMap.addMarker(new MarkerOptions()
-                                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                        .title(incidence.getType())
-                                                        .snippet("Creada por " + incidence.getCreatorID())
-                                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                        .draggable(true));
-                                            }
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(position.getLat(), position.getLon()))
+                                                    .title(userInformation.getFirstName()+" "+userInformation.getLastName1())
+                                                    .snippet(position.getTimestamp())
+                                                    .icon(BitmapDescriptorFactory.fromResource(userIcon))
+                                                    .draggable(true));
                                         }
+
+
+                                }
+
+                                if (itemType.equals("information")) {
+                                    userInformation = currentItem.getValue(UserInformation.class);
+                                    //toastMessage(userInformation.getFirstName());
+
+
+
+
+                                }
+
+                                //if retrieved database object are incident type
+                                if (itemType.equals("incidence")) {
+                                    //retrieve incidence object from database
+                                    String incidenceID = currentField.getKey();
+                                    Incidence incidence = currentField.getValue(Incidence.class);
+
+                                    //according to incidence type, shows different icon
+                                    int incidenceIcon;
+                                    switch (incidence.getType()) {
+                                        case "Incendio":
+                                            incidenceIcon = R.mipmap.ic_incendio_round;
+                                            break;
+                                        case "Corte luz":
+                                            incidenceIcon = R.mipmap.ic_electrico_round;
+                                            break;
+                                        default:
+                                            incidenceIcon = R.mipmap.ic_incendio_round;
+                                            break;
+                                    }
+
+                                    //if the incidence is activated, add google maps marker
+                                    if (incidence.getStatus()) {
+                                        mMap.addMarker(new MarkerOptions()
+                                                .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                .title(incidence.getType())
+                                                .snippet("Creada por " + incidence.getCreatorID())
+                                                .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                .draggable(true));
                                     }
                                 }
                             }
                         }
-                        if (position != null)
-                        {
-                            //toastMessage(position.getCreatorID());
-
-                            int userIcon;
-                            switch (userInformation.getCategory())
-                            {
-                                case "Bombero": userIcon = R.mipmap.ic_fireman_round; break;
-                                case "Medico": userIcon = R.mipmap.ic_medical_round; break;
-                                default: userIcon = R.mipmap.ic_fireman_round;
-                            }
-
-                            mMap.addMarker(new MarkerOptions()
-                                    .position(new LatLng(position.getLat(), position.getLon()))
-                                    .title(userInformation.getFirstName()+" "+userInformation.getLastName1())
-                                    .snippet(userInformation.getGroup())
-                                    .icon(BitmapDescriptorFactory.fromResource(userIcon))
-                                    .draggable(true));
-                        }
-
                     }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+                }
             }
-
 
 
             @Override
@@ -439,8 +423,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            //if (!checkLocation())
-            //  return false;
+
+            trackingIsEnabled = !trackingIsEnabled;
+            toastMessage(String.valueOf(trackingIsEnabled));
 
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -453,6 +438,9 @@ public class MainActivity extends AppCompatActivity
                 // for ActivityCompat#requestPermissions for more details.
 
             }
+
+
+
             /*
             LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
             Location myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -721,20 +709,24 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        // Obtenemos la última ubicación al ser la primera vez
-        processLastLocation();
-        // Iniciamos las actualizaciones de ubicación
-        startLocationUpdates();
-        // Y también las de reconocimiento de actividad
-        startActivityUpdates();
 
-        if (mLastLocation != null) {
-            //mLatitude.setText(String.valueOf(mLastLocation.getLatitude()));
-            //mLongitude.setText(String.valueOf(mLastLocation.getLongitude()));
-            //toastMessage(mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
-        } else {
-            Toast.makeText(this, "Ubicación no encontrada", Toast.LENGTH_LONG).show();
-        }
+
+            // Obtenemos la última ubicación al ser la primera vez
+            processLastLocation();
+            // Iniciamos las actualizaciones de ubicación
+            startLocationUpdates();
+            // Y también las de reconocimiento de actividad
+            startActivityUpdates();
+
+            if (mLastLocation != null) {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), 15.0f));
+                //toastMessage(mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+            } else {
+                Toast.makeText(this, "Ubicación no encontrada", Toast.LENGTH_LONG).show();
+            }
+
+
+
     }
 
     @Override
@@ -1077,4 +1069,5 @@ public class MainActivity extends AppCompatActivity
         }
 
     }
+
 }
