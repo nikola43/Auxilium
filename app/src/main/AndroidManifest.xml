@@ -62,7 +62,7 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps"></activity>
+            android:label="@string/title_activity_maps" />
 
         <service android:name=".MyFirebaseMessagingService">
             <intent-filter>
@@ -78,7 +78,8 @@
             android:name=".DetectedActivitiesIntentService"
             android:exported="false" />
 
-        <activity android:name=".SignUpNewUserActivity"></activity>
+        <activity android:name=".SignUpNewUserActivity" />
+        <activity android:name=".SendPasswordResetEmail"></activity>
     </application>
 
 </manifest>

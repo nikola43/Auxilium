@@ -36,9 +36,19 @@
     </string-array>
 
     <string-array name="incidenceType_array">
-        <item>Terremoto</item>
-        <item>Incendio</item>
-        <item>Corte</item>
+        <item>Movimiento de terreno</item>
+        <item>Caída de Meteoritos Satélites Artificiales</item>
+        <item>Contaminación</item>
+        <item>Accidentes en ríos, lagos, cuevas y montañas</item>
+        <item>Sanitario</item>
+        <item>Contaminación Radiológica</item>
+        <item>Riesgo Industrial</item>
+        <item>Climáticos y meteorológicos</item>
+        <item>Riesgo asociados al transporte y el tráfico</item>
+        <item>Riesgo por incendio urbano y explosión</item>
+        <item>Actos de delincuencia, vandalismo y terrorismo</item>
+        <item>Riesgo por concentraciones humanas</item>
+        <item>Riesgo por fallos en los suministros básicos</item>
     </string-array>
 
     <string name="no_location_detected">

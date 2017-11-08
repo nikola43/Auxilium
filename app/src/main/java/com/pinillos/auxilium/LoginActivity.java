@@ -1,14 +1,11 @@
 package com.pinillos.auxilium;
 
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -83,6 +80,13 @@ public class LoginActivity extends AppCompatActivity {
     {
         //Go to signUpNewUser activity
         Intent intent = new Intent(LoginActivity.this, SignUpNewUserActivity.class);
+        startActivity(intent);
+    }
+
+    public void goToSendPasswordResetEmailActivity(View view)
+    {
+        //Go to main activity
+        Intent intent = new Intent(LoginActivity.this, SendPasswordResetEmail.class);
         startActivity(intent);
     }
 
