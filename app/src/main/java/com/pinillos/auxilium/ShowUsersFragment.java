@@ -11,10 +11,10 @@ import android.view.ViewGroup;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class IncidenceFragment extends Fragment {
+public class ShowUsersFragment extends Fragment {
 
 
-    public IncidenceFragment() {
+    public ShowUsersFragment() {
         // Required empty public constructor
     }
 
@@ -23,7 +23,7 @@ public class IncidenceFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_incidence, container, false);
+        return inflater.inflate(R.layout.fragment_show_users, container, false);
     }
 
 }

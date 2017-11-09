@@ -4,9 +4,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
+import android.os.Build;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -20,14 +20,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -38,16 +36,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -59,7 +57,6 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.location.places.Place;
@@ -83,14 +80,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -160,11 +153,6 @@ public class MainActivity extends AppCompatActivity
      * Represents a geographical location.
      */
     private Location mCurrentLocation;
-
-    // Labels.
-    private String mLatitudeLabel;
-    private String mLongitudeLabel;
-    private String mLastUpdateTimeLabel;
 
     /**
      * Tracks the status of the location updates request. Value changes when the user presses the
@@ -252,6 +240,7 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
 
+
         //instace firebase auth and database
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance();
@@ -270,7 +259,6 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         };
-
 
         //Add firebase event listener
         firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
@@ -384,11 +372,25 @@ public class MainActivity extends AppCompatActivity
         });
 
 
-        // boolean status = checkPlayServices(this);
-
         //Add support to map fragment
         final SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        mapFragment.getView().setClickable(true);
+
+
+
+        View mapView = mapFragment.getView();
+        if (mapView != null && mapView.findViewById(1) != null) {
+            // Get the button view
+            View locationButton = ((View) mapView.findViewById(1).getParent()).findViewById(2);
+            // and next place it, on bottom right (as Google Maps app)
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)
+                    locationButton.getLayoutParams();
+            // position on right bottom
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 0, 30, 120);
+        }
 
         //Bottom navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
@@ -397,20 +399,25 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 
-                        Fragment fragment = new IncidenceFragment();
+                        Fragment showIncidenceFragment = new ShowIncidenceFragment();
+                        Fragment showUsersFragment = new ShowUsersFragment();
+                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                        transaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
+
 
                         switch (item.getItemId()) {
                             case R.id.action_favorites:
                                 toastMessage("menu_uno");
-                                getSupportFragmentManager().beginTransaction().replace(R.id.incidenceLayout, getSupportFragmentManager().findFragmentById(R.id.map)).commit();
+
+
+
                                 break;
                             case R.id.action_schedules:
                                 toastMessage("menu_dos");
-
-
-                                getSupportFragmentManager().beginTransaction().replace(R.id.mainLayout, fragment).commit();
+                                transaction.replace(R.id.mainLayout, showIncidenceFragment).commit();
                                 break;
                             case R.id.action_music:
+                                transaction.replace(R.id.mainLayout, showUsersFragment).commit();
                                 toastMessage("menu_tres");
                                 break;
                         }
@@ -712,8 +719,7 @@ public class MainActivity extends AppCompatActivity
 
 
         if (mCurrentLocation != null) {
-
-
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 15.0f));
         } else {
             Toast.makeText(this, "Ubicación no encontrada", Toast.LENGTH_LONG).show();
         }
@@ -864,17 +870,22 @@ public class MainActivity extends AppCompatActivity
         if (requestCode == PLACE_PICKER_REQUEST) {
             if (resultCode == RESULT_OK) {
                 Place place = PlacePicker.getPlace(data, this);
-                String tipoIncidencia;
 
-                String placeName = String.format("%s", place.getName());
-                String latitude = String.valueOf(place.getLatLng().latitude);
-                String longitude = String.valueOf(place.getLatLng().longitude);
-                String address = String.format("%s", place.getAddress());
 
-                tipoIncidencia = seleccionarTipoIncidencia();
+                if ( place != null )
+                {
+                    String tipoIncidencia;
+                    String placeName = String.format("%s", place.getName());
+                    String latitude = String.valueOf(place.getLatLng().latitude);
+                    String longitude = String.valueOf(place.getLatLng().longitude);
+                    String address = String.format("%s", place.getAddress());
 
-                //Write incidence to database
-                writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                    tipoIncidencia = seleccionarTipoIncidencia();
+
+
+                    //Write incidence to database
+                    writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                }
             }
         }
     }

@@ -14,7 +14,6 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class SendPasswordResetEmail extends AppCompatActivity {
 
-    private static final String TAG = "SendPasswordResetEmail";
     private EditText email;
 
     @Override

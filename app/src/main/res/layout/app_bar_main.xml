@@ -41,13 +41,16 @@
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/toolbar"
                 android:layout_gravity="bottom|end"
-                android:layout_marginTop="21dp"
+                android:layout_marginEnd="13dp"
+                android:layout_marginRight="13dp"
+                android:layout_marginTop="12dp"
                 android:background="@android:color/white"
+                android:onClick="showLayerSelectionDialog"
+                app:backgroundTint="@android:color/white"
                 app:fabSize="mini"
                 app:layout_anchor="@+id/toolbar"
                 app:layout_anchorGravity="right|bottom"
-                app:srcCompat="@drawable/ic_select_layer"
-                android:onClick="showLayerSelectionDialog"/>
+                app:srcCompat="@drawable/ic_select_layer" />
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fab"
@@ -59,7 +62,7 @@
                 android:layout_marginBottom="58dp"
                 android:onClick="createIncidence"
                 app:layout_anchorGravity="right|center"
-                app:srcCompat="@android:drawable/ic_dialog_email" />
+                app:srcCompat="@drawable/ic_new_incidence" />
 
             <!-- Toolbar -->
             <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"

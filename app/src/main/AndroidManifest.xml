@@ -79,7 +79,6 @@
             android:exported="false" />
 
         <activity android:name=".SignUpNewUserActivity" />
-        <activity android:name=".SendPasswordResetEmail"></activity>
+        <activity android:name=".SendPasswordResetEmail"/>
     </application>
-
 </manifest>

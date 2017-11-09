@@ -4,13 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pinillos.auxilium.IncidenceFragment">
+    tools:context="com.pinillos.auxilium.ShowIncidenceFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <!-- TODO: Update blank fragment layout -->
 
         <ListView
             android:layout_width="match_parent"
@@ -18,12 +16,21 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            android:layout_marginBottom="57dp"
-            android:background="@android:color/black" />
+            android:layout_marginBottom="58dp"
+            android:background="@android:color/holo_blue_light" />
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="108dp"
+            android:layout_marginStart="108dp"
+            android:layout_marginTop="53dp"
+            android:text="Incidencias" />
 
 
     </RelativeLayout>
-
-
-
 </FrameLayout>
