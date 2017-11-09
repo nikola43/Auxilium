@@ -36,6 +36,7 @@ dependencies {
     compile 'com.google.firebase:firebase-messaging:11.6.0'
     compile 'com.android.support:design:26.1.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
+    compile 'de.hdodenhof:circleimageview:2.2.0'
 }
 
 

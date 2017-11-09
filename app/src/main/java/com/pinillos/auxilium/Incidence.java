@@ -1,5 +1,7 @@
 package com.pinillos.auxilium;
 
+import android.graphics.drawable.Drawable;
+
 public class Incidence
 {
     //attributes
@@ -9,6 +11,7 @@ public class Incidence
     private double lon;
     private String type;
     private String timestamp;
+    private Drawable imagen;
 
     //constructors
     public Incidence()
@@ -16,7 +19,7 @@ public class Incidence
 
     }
 
-    public Incidence(String creatorID, double lat, double lon, boolean status, String timestamp, String type)
+    public Incidence(String creatorID, double lat, double lon, boolean status, String timestamp, String type, Drawable imagen)
     {
         this.creatorID = creatorID;
         this.lat = lat;
@@ -25,6 +28,15 @@ public class Incidence
         this.timestamp = timestamp;
         this.type = type;
 
+        this.imagen = imagen;
+    }
+
+    public Drawable getImage() {
+        return imagen;
+    }
+
+    public void setImagen(Drawable imagen) {
+        this.imagen = imagen;
     }
 
     //getters

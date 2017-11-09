@@ -1,18 +1,35 @@
 package com.pinillos.auxilium;
 
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ShowUsersFragment extends Fragment {
 
+    private static final String TAG = "ShowUsersFragment";
+    private FirebaseDatabase firebaseDatabase;
+    private DatabaseReference firebaseDatabaseReference;
 
     public ShowUsersFragment() {
         // Required empty public constructor
@@ -24,6 +41,111 @@ public class ShowUsersFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_show_users, container, false);
+
+
+    }
+
+    @Override
+    public void onActivityCreated(Bundle state) {
+
+        super.onActivityCreated(state);
+
+
+        //Add firebase event listener
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+
+
+        firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                ArrayList<UserInformation> userInformationArrayList = new ArrayList<>();
+                Drawable drawable;
+
+                Position position = null;
+                //retrieve data from database
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                    String objectType = dbObjects.getKey();
+                    //toastMessage(objectType);
+
+                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                        final String userID = currentUser.getKey();
+                        //toastMessage(userID);
+
+                        for (DataSnapshot currentItem : currentUser.getChildren()) {
+
+                            String itemType = currentItem.getKey();
+                            //toastMessage(itemType);
+
+
+                            if (itemType.equals("information")) {
+                                UserInformation userInformation = currentItem.getValue(UserInformation.class);
+
+                                switch (userInformation.getCategory()) {
+                                    case "Medico":
+                                        drawable = getResources().getDrawable(R.mipmap.ic_medical_round);
+                                        break;
+                                    case "Bombero":
+                                        drawable = getResources().getDrawable(R.mipmap.ic_fireman_round);
+                                        break;
+                                    default:
+                                        drawable = getResources().getDrawable(R.mipmap.ic_incendio_round);
+                                        break;
+                                }
+                                userInformation.setImagen(drawable);
+
+                                userInformationArrayList.add(userInformation);
+
+                            }
+                        }
+                    }
+                }
+
+                ListView lv = getView().findViewById(R.id.user_listView);
+                UserInformationAdapterItem adapter = new UserInformationAdapterItem(getActivity(), userInformationArrayList);
+
+                lv.setAdapter(adapter);
+
+                lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                        UserInformation u = (UserInformation) parent.getItemAtPosition(position);
+                        showUserInfo(u);
+                    }
+                });
+            }
+
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+                Toast.makeText(getActivity().getApplicationContext(), "Failed to alter database.", Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "Failed to read value.", databaseError.toException());
+            }
+        });
+    }
+
+    public void showUserInfo(UserInformation userInformation)
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setMessage(
+                "Categoria: "+userInformation.getCategory()+"\n"+
+                "Grupo: "    +userInformation.getGroup() + "\n" +
+                "Nombre: "   +userInformation.getFirstName() + "\n" +
+                "Apellidos: "+userInformation.getLastName1()+" "+userInformation.getLastName2()+ "\n")
+                .setPositiveButton("Asignar incidencia", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                    }
+                })
+                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+
+                    }
+                });
+        // Create the AlertDialog object and return it
+        builder.show();
     }
 
 }

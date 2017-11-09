@@ -1,10 +1,13 @@
 package com.pinillos.auxilium;
 
 
+import android.graphics.drawable.Drawable;
+
 public class UserInformation
 {
     //attributes
     private String userID, firstName, lastName1, lastName2, dni, email, group, category;
+    private Drawable imagen;
 
     //Constructors
     public UserInformation()
@@ -12,7 +15,7 @@ public class UserInformation
 
     }
 
-    public UserInformation(String category, String dni, String email, String firstName, String group, String lastName1, String lastName2, String userID)
+    public UserInformation(String category, String dni, String email, String firstName, String group, String lastName1, String lastName2, String userID, Drawable imagen)
     {
         this.category = category;
         this.dni = dni;
@@ -22,9 +25,15 @@ public class UserInformation
         this.lastName1 = lastName1;
         this.lastName2 = lastName2;
         this.userID = userID;
+        this.imagen = imagen;
     }
 
     //getters
+
+
+    public Drawable getImagen() {
+        return imagen;
+    }
 
     public String getUserID() {
         return userID;
@@ -61,6 +70,10 @@ public class UserInformation
 
     //setters
 
+
+    public void setImagen(Drawable imagen) {
+        this.imagen = imagen;
+    }
 
     public void setUserID(String userID) {
         this.userID = userID;

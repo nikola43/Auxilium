@@ -2,21 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_favorites"
+        android:id="@+id/action_mapa"
         android:enabled="true"
-        android:icon="@drawable/ic_menu_gallery"
-        android:title="@string/text_favorites"
+        android:icon="@drawable/ic_map_icon"
+        android:title="@string/text_mapa"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/action_schedules"
+        android:id="@+id/action_incidencias"
         android:enabled="true"
-        android:icon="@drawable/ic_menu_camera"
-        android:title="@string/text_schedules"
+        android:icon="@drawable/ic_users_icon"
+        android:title="@string/text_incidencias"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/action_music"
+        android:id="@+id/action_users"
         android:enabled="true"
-        android:icon="@drawable/ic_menu_manage"
-        android:title="@string/text_music"
+        android:icon="@drawable/ic_incidence_icon"
+        android:title="@string/text_usuarios"
         app:showAsAction="ifRoom" />
 </menu>

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
@@ -38,6 +39,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -85,6 +89,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
@@ -184,10 +189,12 @@ public class MainActivity extends AppCompatActivity
 
 
     //FBA for place and layer select
-    FloatingActionButton fabPickPlace;
-    FloatingActionButton fabLayerSelect;
+    private FloatingActionButton fabPickPlace;
+    private FloatingActionButton fabLayerSelect;
 
     private GoogleMap mMap;
+
+    private ListView lista;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -228,6 +235,10 @@ public class MainActivity extends AppCompatActivity
         //Reference floating button
         fabPickPlace = findViewById(R.id.fab);
         fabLayerSelect = findViewById(R.id.layerSelector);
+
+
+
+
 
         //Drawer menu reference and initialization
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -406,17 +417,15 @@ public class MainActivity extends AppCompatActivity
 
 
                         switch (item.getItemId()) {
-                            case R.id.action_favorites:
+                            case R.id.action_mapa:
                                 toastMessage("menu_uno");
 
-
-
                                 break;
-                            case R.id.action_schedules:
+                            case R.id.action_incidencias:
                                 toastMessage("menu_dos");
                                 transaction.replace(R.id.mainLayout, showIncidenceFragment).commit();
                                 break;
-                            case R.id.action_music:
+                            case R.id.action_users:
                                 transaction.replace(R.id.mainLayout, showUsersFragment).commit();
                                 toastMessage("menu_tres");
                                 break;
@@ -560,7 +569,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onInfoWindowClick(Marker marker) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Incidence creada por: \n" +
+        builder.setMessage("Incidence creada por:" +
                 "Titulo: " + marker.getTitle() + "\n" +
                 "Descripcion: " + marker.getSnippet() + "\n" +
                 "Numero: " + marker.getId() + "\n" +
@@ -635,7 +644,7 @@ public class MainActivity extends AppCompatActivity
         firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
         String incidenceID = firebaseDatabaseReference.push().getKey();
 
-        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType);
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType, null);
 
         //Write incidence to firebase database
         firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("incidence").child(incidenceID).setValue(incidence);

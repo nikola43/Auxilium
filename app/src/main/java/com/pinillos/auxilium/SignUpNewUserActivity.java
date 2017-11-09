@@ -130,7 +130,7 @@ public class SignUpNewUserActivity extends AppCompatActivity {
                                 String userID = user.getUid();
 
                                 UserInformation userInformation = new UserInformation(category, dni.getText().toString(), email.getText().toString(),
-                                        firstName.getText().toString(), group, lastName1.getText().toString(), lastName2.getText().toString(), user.getUid());
+                                        firstName.getText().toString(), group, lastName1.getText().toString(), lastName2.getText().toString(), user.getUid(), null);
 
                                 myRef.child("users").child(userID).child("information").setValue(userInformation);
 
