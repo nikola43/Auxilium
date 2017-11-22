@@ -94,23 +94,31 @@ public class ShowIncidenceFragment extends Fragment {
 
                                     //according to incidence type, shows different icon
 
-                                    switch (incidence.getType()) {
-                                        case "Riesgo por incendio urbano y explosión":
-                                            drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
-                                            break;
-                                        case "Riesgo por fallos en los suministros básicos":
-                                            drawable = getResources().getDrawable( R.mipmap.ic_electrico_round );
-                                            break;
-                                        default:
-                                            drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
-                                            break;
-                                    }
-                                    incidence.setImagen(drawable);
+                                    if ( incidence != null )
+                                    {
+                                        String incidenceType = incidence.getType();
 
-                                    //if the incidence is activated, add google maps marker
-                                    if (incidence.getStatus()) {
-                                        incidenceArrayList.add(incidence);
+                                        if (incidenceType != null)
+                                        {
+                                            switch (incidenceType) {
+                                                case "Riesgo por incendio urbano y explosión":
+                                                    drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
+                                                    break;
+                                                case "Riesgo por fallos en los suministros básicos":
+                                                    drawable = getResources().getDrawable( R.mipmap.ic_electrico_round );
+                                                    break;
+                                                default:
+                                                    drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
+                                                    break;
+                                            }
+                                            incidence.setImagen(drawable);
 
+                                            //if the incidence is activated, add google maps marker
+                                            if (incidence.getStatus()) {
+                                                incidenceArrayList.add(incidence);
+
+                                            }
+                                        }
                                     }
                                 }
                             }

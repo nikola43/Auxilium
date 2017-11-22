@@ -343,28 +343,36 @@ public class MainActivity extends AppCompatActivity
                                     String incidenceID = currentField.getKey();
                                     Incidence incidence = currentField.getValue(Incidence.class);
 
-                                    //according to incidence type, shows different icon
-                                    int incidenceIcon;
-                                    switch (incidence.getType()) {
-                                        case "Incendio":
-                                            incidenceIcon = R.mipmap.ic_incendio_round;
-                                            break;
-                                        case "Corte luz":
-                                            incidenceIcon = R.mipmap.ic_electrico_round;
-                                            break;
-                                        default:
-                                            incidenceIcon = R.mipmap.ic_incendio_round;
-                                            break;
-                                    }
+                                    if ( incidence != null )
+                                    {
+                                        //according to incidence type, shows different icon
+                                        int incidenceIcon;
+                                        String incidenceType = incidence.getType();
+                                        if (incidenceType != null)
+                                        {
+                                            switch (incidenceType) {
+                                                case "Riesgo Industrial":
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
+                                                case "Riesgo por fallos en los suministros básicos":
+                                                    incidenceIcon = R.mipmap.ic_electrico_round;
+                                                    break;
+                                                default:
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
+                                            }
 
-                                    //if the incidence is activated, add google maps marker
-                                    if (incidence.getStatus()) {
-                                        mMap.addMarker(new MarkerOptions()
-                                                .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                .title(incidence.getType())
-                                                .snippet("Creada por " + incidence.getCreatorID())
-                                                .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                .draggable(true));
+                                            //if the incidence is activated, add google maps marker
+                                            if (incidence.getStatus()) {
+                                                mMap.addMarker(new MarkerOptions()
+                                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                        .title(incidence.getType())
+                                                        .snippet("Creada por " + incidence.getCreatorID())
+                                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                        .draggable(true));
+                                            }
+                                        }
+
                                     }
                                 }
                             }
