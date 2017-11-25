@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
@@ -19,6 +19,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.model.UserInformation;
+import com.pinillos.auxilium.Adapters.UserInformationAdapterItem;
 import com.pinillos.auxilium.model.Position;
 
 import java.util.ArrayList;
@@ -125,6 +128,15 @@ public class ShowUsersFragment extends Fragment {
                 Log.w(TAG, "Failed to read value.", databaseError.toException());
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        firebaseDatabaseReference.removeValue();
+        if (firebaseDatabaseReference != null){
+            firebaseDatabaseReference.onDisconnect();
+        }
     }
 
     public void showUserInfo(UserInformation userInformation)

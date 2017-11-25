@@ -1,7 +1,8 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -19,6 +20,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.pinillos.auxilium.model.Incidence;
+import com.pinillos.auxilium.Others.IncidenceAdapterItem;
+import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.model.Position;
 
 import java.util.ArrayList;
@@ -32,33 +36,36 @@ public class ShowIncidenceFragment extends Fragment {
     private static final String TAG = "ShowIncidenceFragment";
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
+    private Context mContext;
+    private View view;
 
     public ShowIncidenceFragment() {
         // Required empty public constructor
     }
 
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_incidence, container, false);
+        view = inflater.inflate(R.layout.fragment_incidence, container, false);
+
+
+
+        return view;
 
 
     }
 
     @Override
     public void onActivityCreated(Bundle state) {
-
         super.onActivityCreated(state);
-
-
-
 
         //Add firebase event listener
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-
 
         firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
             @Override
@@ -103,13 +110,13 @@ public class ShowIncidenceFragment extends Fragment {
                                         {
                                             switch (incidenceType) {
                                                 case "Riesgo por incendio urbano y explosión":
-                                                    drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
+                                                    drawable = view.getResources().getDrawable( R.mipmap.ic_incendio_round );
                                                     break;
                                                 case "Riesgo por fallos en los suministros básicos":
-                                                    drawable = getResources().getDrawable( R.mipmap.ic_electrico_round );
+                                                    drawable = view.getResources().getDrawable( R.mipmap.ic_electrico_round );
                                                     break;
                                                 default:
-                                                    drawable = getResources().getDrawable( R.mipmap.ic_incendio_round );
+                                                    drawable = view.getResources().getDrawable( R.mipmap.ic_incendio_round );
                                                     break;
                                             }
                                             incidence.setImagen(drawable);
@@ -126,6 +133,7 @@ public class ShowIncidenceFragment extends Fragment {
                         }
                     }
                 }
+
                 ListView lv = getView().findViewById(R.id.incidence_listView);
                 IncidenceAdapterItem adapter = new IncidenceAdapterItem(getActivity(),incidenceArrayList);
 
@@ -151,6 +159,17 @@ public class ShowIncidenceFragment extends Fragment {
                 Log.w(TAG, "Failed to read value.", databaseError.toException());
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        firebaseDatabaseReference.removeValue();
+        if(firebaseDatabase != null){
+            firebaseDatabaseReference.onDisconnect();
+            //firebaseDatabase.goOffline();
+        }
+
     }
 
     public void showIncidenceInfo(Incidence incidence)

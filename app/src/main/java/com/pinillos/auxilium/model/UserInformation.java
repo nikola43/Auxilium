@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.model;
 
 
 import android.graphics.drawable.Drawable;
