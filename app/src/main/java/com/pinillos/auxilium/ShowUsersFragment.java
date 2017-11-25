@@ -128,23 +128,25 @@ public class ShowUsersFragment extends Fragment {
 
     public void showUserInfo(UserInformation userInformation)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setMessage(
-                "Categoria: "+userInformation.getCategory()+"\n"+
-                "Grupo: "    +userInformation.getGroup() + "\n" +
-                "Nombre: "   +userInformation.getFirstName() + "\n" +
-                "Apellidos: "+userInformation.getLastName1()+" "+userInformation.getLastName2()+ "\n")
-                .setPositiveButton("Asignar incidencia", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        // Get the layout inflater
+        LayoutInflater inflater = getActivity().getLayoutInflater();
 
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(inflater.inflate(R.layout.user_onclick_layout, null))
+                .setPositiveButton("Finalizar usuario", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Send the positive button event back to the host activity
+                        //mListener.onDialogPositiveClick(NoticeDialogFragment.this);
                     }
                 })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                .setNegativeButton("Atrás", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-
+                        // Send the negative button event back to the host activity
+                        //mListener.onDialogNegativeClick(NoticeDialogFragment.this);
                     }
                 });
-        // Create the AlertDialog object and return it
         builder.show();
     }
 

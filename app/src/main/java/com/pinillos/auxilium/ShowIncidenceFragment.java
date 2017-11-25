@@ -5,13 +5,16 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -31,6 +34,7 @@ public class ShowIncidenceFragment extends Fragment {
     private static final String TAG = "ShowIncidenceFragment";
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
+    private FloatingActionButton addUserToIncidenceButton;
 
     public ShowIncidenceFragment() {
         // Required empty public constructor
@@ -38,11 +42,12 @@ public class ShowIncidenceFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_incidence, container, false);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
+        View rootView = inflater.inflate(R.layout.fragment_incidence, container, false);
+
+        // Inflate the layout for this fragment
+        return rootView;
 
     }
 
@@ -50,7 +55,6 @@ public class ShowIncidenceFragment extends Fragment {
     public void onActivityCreated(Bundle state) {
 
         super.onActivityCreated(state);
-
 
 
 
@@ -154,23 +158,31 @@ public class ShowIncidenceFragment extends Fragment {
 
     public void showIncidenceInfo(Incidence incidence)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setMessage("Incidence creada por:" +
-                "Tipo: " + incidence.getType() + "\n" +
-                "Estado: " + incidence.getStatus()+ "\n" +
-                "Fecha/hora: " + incidence.getTimestamp() + "\n" +
-                "Creador: " + incidence.getCreatorID()+ "\n")
-                .setPositiveButton("Asignar usuarios", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
+        TextView textView = getActivity().findViewById(R.id.incidence_name);
+        toastMessage(textView.getText().toString());
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        // Get the layout inflater
+        LayoutInflater inflater = getActivity().getLayoutInflater();
 
-                    }
-                })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-
-                    }
-                });
-        // Create the AlertDialog object and return it
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(inflater.inflate(R.layout.incidence_onclick_layout, null))
+        .setPositiveButton("Finalizar incidencia", new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int id) {
+            // Send the positive button event back to the host activity
+            //mListener.onDialogPositiveClick(NoticeDialogFragment.this);
+        }
+    })
+            .setNegativeButton("Atrás", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // Send the negative button event back to the host activity
+                    //mListener.onDialogNegativeClick(NoticeDialogFragment.this);
+                }
+            });
         builder.show();
+    }
+
+    public void toastMessage(String message) {
+        Toast.makeText(this.getContext(), message, Toast.LENGTH_SHORT).show();
     }
 }
