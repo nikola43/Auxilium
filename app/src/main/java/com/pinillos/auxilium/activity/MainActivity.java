@@ -49,22 +49,37 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.Util.MessageUtil;
 import com.pinillos.auxilium.fragment.MapsFragment;
 import com.pinillos.auxilium.fragment.ShowIncidenceFragment;
 import com.pinillos.auxilium.fragment.ShowUsersFragment;
+import com.pinillos.auxilium.model.Incidence;
 import com.pinillos.auxilium.model.UserInformation;
 
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private int PLACE_PICKER_REQUEST = 1;
     private Toolbar toolbar;
+    private static final int REQUEST_CHECK_SETTINGS = 0x1;
+    private static final String TAG = MainActivity.class.getSimpleName();
+    //Firebase auth and db instances
+    public static FirebaseDatabase firebaseDatabase;
+    public static FirebaseAuth firebaseAuth;
+    public static FirebaseAuth.AuthStateListener firebaseAuthListener;
+    public static DatabaseReference firebaseDatabaseReference;
+    public static FirebaseUser firebaseUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +89,7 @@ public class MainActivity extends AppCompatActivity
         configureAndInicializeToolbar();
         configureAndInicializeDraerNavigation();
         configureAndInicializeBottomNavigation();
+        configureAndInicializeFirebase();
 
 
      //Inicializamos el MapsFragemnts al inicio
@@ -81,6 +97,27 @@ public class MainActivity extends AppCompatActivity
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.fragment_container, mapsFragment);
         transaction.commit();
+    }
+
+    private void configureAndInicializeFirebase() {
+        //instace firebase auth and database
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        firebaseUser = firebaseAuth.getCurrentUser();
+
+        //User login
+        firebaseAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                } else {
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
     }
 
     private void configureAndInicializeToolbar() {
@@ -162,9 +199,9 @@ public class MainActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             //firebaseAuth.signOut();
-            //Intent intent = new Intent(this, LoginActivity.class);
-            //startActivity(intent);
-            MessageUtil.toastMessage(this, "Funcionalidad en pruebas");
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            //MessageUtil.toastMessage(this, "Funcionalidad en pruebas");
         }
 
         return super.onOptionsItemSelected(item);
@@ -194,6 +231,107 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            // Check for the integer request code originally supplied to startResolutionForResult().
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        Log.i(TAG, "User agreed to make required location settings changes.");
+                        // Nothing to do. startLocationupdates() gets called in onResume again.
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        Log.i(TAG, "User chose not to make required location settings changes.");
+                        //mRequestingLocationUpdates = false;
+                        //updateUI();
+                        break;
+                }
+                break;
+        }
+
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(data, this);
+
+
+                if ( place != null )
+                {
+                    String tipoIncidencia;
+                    String placeName = String.format("%s", place.getName());
+                    String latitude = String.valueOf(place.getLatLng().latitude);
+                    String longitude = String.valueOf(place.getLatLng().longitude);
+                    String address = String.format("%s", place.getAddress());
+
+                    tipoIncidencia = seleccionarTipoIncidencia();
+
+
+                    //Write incidence to database
+                    writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                }
+            }
+        }
+    }
+
+    private void writeIncidenceToFirebaseDB(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
+
+        firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
+        String incidenceID = firebaseDatabaseReference.push().getKey();
+
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType, null);
+
+        //Write incidence to firebase database
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("incidence").child(incidenceID).setValue(incidence);
+    }
+
+    public String seleccionarTipoIncidencia() {
+
+        final Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message mesg) {
+                throw new RuntimeException();
+            }
+        };
+
+        //Get incidence types from resources
+        Resources res = getResources();
+        final String[] incidenceTypes = res.getStringArray(R.array.incidenceType_array);
+
+        final String[] selectedType = new String[1];
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(incidenceTypes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        selectedType[0] = incidenceTypes[which];
+                        handler.sendMessage(handler.obtainMessage());
+                    }
+                });
+        builder.show();
+        try {
+            Looper.loop();
+        } catch (RuntimeException e) {
+        }
+
+        return selectedType[0];
+
+    }
+
+    public static String getCurrentTimeStamp() {
+        try {
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String currentDateTime = dateFormat.format(new Date()); // Find todays date
+
+            return currentDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return null;
+        }
     }
 
 }

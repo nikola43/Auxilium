@@ -29,7 +29,6 @@
         android:layout_marginRight="13dp"
         android:layout_marginTop="12dp"
         android:background="@android:color/white"
-        android:onClick="showLayerSelectionDialog"
         app:backgroundTint="@android:color/white"
         app:fabSize="mini"
         app:layout_anchor="@+id/toolbar"
@@ -37,14 +36,13 @@
         app:srcCompat="@drawable/ic_select_layer" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
+        android:id="@+id/createIncidencefab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|end"
         android:layout_marginBottom="58dp"
-        android:onClick="createIncidence"
         app:layout_anchorGravity="right|center"
         app:srcCompat="@drawable/ic_new_incidence" />
 

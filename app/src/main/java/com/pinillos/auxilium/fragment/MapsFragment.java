@@ -24,6 +24,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResolvableApiException;
@@ -38,6 +40,7 @@ import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -57,6 +60,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.pinillos.auxilium.AuxiliumApplication;
 import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.model.Incidence;
 import com.pinillos.auxilium.R;
@@ -138,6 +142,8 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     private DatabaseReference firebaseDatabaseReference;
     private FirebaseUser firebaseUser;
 
+    private FloatingActionButton fabCreateIncidence,fabShowLayerSelector;
+
 
     private GoogleMap mMap;
     private String mLastUpdateTime;
@@ -153,10 +159,13 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_maps, null);
 
+        inicializeViews(view);
+
         //Add support to map fragment
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mapFragment.getView().setClickable(true);
+
 
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addConnectionCallbacks(this)
@@ -180,19 +189,80 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         configureAndInicializeFireBase();
 
         //Reference floating button
-        fabPickPlace = view.findViewById(R.id.fab);
+        fabPickPlace = view.findViewById(R.id.createIncidencefab);
         fabLayerSelect = view.findViewById(R.id.layerSelector);
 
 
         return view;
     }
 
+    private void inicializeViews(View view) {
+        fabShowLayerSelector = view.findViewById(R.id.layerSelector);
+        fabShowLayerSelector.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                final CharSequence[] items = new CharSequence[4];
+
+                items[0] = "Normal";
+                items[1] = "Terreno";
+                items[2] = "Satelite";
+                items[3] = "Híbrido";
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setTitle("Seleccione un tipo de mapa")
+                        .setItems(items, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case 0:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                                        break;
+                                    case 1:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+                                        break;
+                                    case 2:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+                                        break;
+                                    case 3:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                                        break;
+                                }
+                            }
+                        });
+                builder.show();
+                //return builder.create();
+            }
+        });
+
+
+        fabCreateIncidence = view.findViewById(R.id.createIncidencefab);
+        fabCreateIncidence.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
+                    Intent intent = intentBuilder.build(getActivity());
+                    getActivity().startActivityForResult(intent, PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+    }
+
     private void configureAndInicializeFireBase() {
         //instace firebase auth and database
-        firebaseAuth = FirebaseAuth.getInstance();
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        firebaseUser = firebaseAuth.getCurrentUser();
+//        firebaseAuth = FirebaseAuth.getInstance();
+//        firebaseDatabase = FirebaseDatabase.getInstance();
+//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+//        firebaseUser = firebaseAuth.getCurrentUser();
+        firebaseAuth = MainActivity.firebaseAuth;
+        firebaseDatabase = MainActivity.firebaseDatabase;
+        firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
+        firebaseUser = MainActivity.firebaseUser;
 
         //User login
         firebaseAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -246,7 +316,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                                                 //toastMessage(position.getCreatorID());
                                                 userInformation = currentItem.getValue(UserInformation.class);
                                                 int userIcon;
-                                                if (userInformation != null){
+                                                if (userInformation != null && userInformation.getCategory() != null){
                                                     switch (userInformation.getCategory()) {
                                                         case "Bombero":
                                                             userIcon = R.mipmap.ic_fireman_round;
@@ -331,7 +401,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public void onPause() {
         super.onPause();
         //firebaseDatabaseReference.removeValue();
-       // mGoogleApiClient.stopAutoManage(getActivity());
+        mGoogleApiClient.stopAutoManage(getActivity());
         mGoogleApiClient.disconnect();
     }
 
@@ -502,6 +572,10 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         setButtonsEnabledState();
         updateLocationUI();
     }
+
+
+
+
 
     /**
      * Sets the value of the UI fields for the location latitude, longitude and last update time.

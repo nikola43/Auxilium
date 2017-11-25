@@ -20,6 +20,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.Incidence;
 import com.pinillos.auxilium.Others.IncidenceAdapterItem;
 import com.pinillos.auxilium.R;
@@ -64,8 +65,11 @@ public class ShowIncidenceFragment extends Fragment {
         super.onActivityCreated(state);
 
         //Add firebase event listener
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+//        firebaseDatabase = FirebaseDatabase.getInstance();
+//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        firebaseDatabase = MainActivity.firebaseDatabase;
+        firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
+
 
         firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
             @Override
@@ -134,7 +138,7 @@ public class ShowIncidenceFragment extends Fragment {
                     }
                 }
 
-                ListView lv = getView().findViewById(R.id.incidence_listView);
+                ListView lv = view.findViewById(R.id.incidence_listView);
                 IncidenceAdapterItem adapter = new IncidenceAdapterItem(getActivity(),incidenceArrayList);
 
                 lv.setAdapter(adapter);
@@ -164,11 +168,11 @@ public class ShowIncidenceFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        firebaseDatabaseReference.removeValue();
-        if(firebaseDatabase != null){
-            firebaseDatabaseReference.onDisconnect();
-            //firebaseDatabase.goOffline();
-        }
+        //firebaseDatabaseReference.removeValue();
+//        if(firebaseDatabase != null){
+//            firebaseDatabaseReference.onDisconnect();
+//            //firebaseDatabase.goOffline();
+//        }
 
     }
 

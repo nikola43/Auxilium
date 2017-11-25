@@ -20,6 +20,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.UserInformation;
 import com.pinillos.auxilium.Adapters.UserInformationAdapterItem;
 import com.pinillos.auxilium.model.Position;
@@ -34,6 +35,7 @@ public class ShowUsersFragment extends Fragment {
     private static final String TAG = "ShowUsersFragment";
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
+    private View view;
 
     public ShowUsersFragment() {
         // Required empty public constructor
@@ -44,7 +46,10 @@ public class ShowUsersFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_show_users, container, false);
+        view = inflater.inflate(R.layout.fragment_show_users, container, false);
+
+
+        return view;
 
 
     }
@@ -56,8 +61,10 @@ public class ShowUsersFragment extends Fragment {
 
 
         //Add firebase event listener
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+//        firebaseDatabase = FirebaseDatabase.getInstance();
+//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        firebaseDatabase = MainActivity.firebaseDatabase;
+        firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
 
 
         firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
@@ -105,7 +112,7 @@ public class ShowUsersFragment extends Fragment {
                     }
                 }
 
-                ListView lv = getView().findViewById(R.id.user_listView);
+                ListView lv = view.findViewById(R.id.user_listView);
                 UserInformationAdapterItem adapter = new UserInformationAdapterItem(getActivity(), userInformationArrayList);
 
                 lv.setAdapter(adapter);
@@ -133,10 +140,10 @@ public class ShowUsersFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        firebaseDatabaseReference.removeValue();
-        if (firebaseDatabaseReference != null){
-            firebaseDatabaseReference.onDisconnect();
-        }
+        //firebaseDatabaseReference.removeValue();
+//        if (firebaseDatabaseReference != null){
+//            firebaseDatabaseReference.onDisconnect();
+//        }
     }
 
     public void showUserInfo(UserInformation userInformation)
