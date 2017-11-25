@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.Others;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;

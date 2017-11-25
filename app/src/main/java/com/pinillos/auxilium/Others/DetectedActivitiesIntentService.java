@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.Others;
 
 
 import android.app.IntentService;

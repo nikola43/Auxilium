@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.Others;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -8,10 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -21,9 +19,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.Arrays;
-import java.util.List;
+import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.activity.MainActivity;
+import com.pinillos.auxilium.model.UserInformation;
 
 public class SignUpNewUserActivity extends AppCompatActivity {
 

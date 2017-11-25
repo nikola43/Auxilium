@@ -1,6 +1,7 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.Others;
 
 import com.google.android.gms.location.DetectedActivity;
+import com.pinillos.auxilium.R;
 
 public class Constants
 {

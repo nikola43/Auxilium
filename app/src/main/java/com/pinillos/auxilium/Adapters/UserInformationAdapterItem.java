@@ -1,4 +1,4 @@
-package com.pinillos.auxilium;
+package com.pinillos.auxilium.Adapters;
 
 
 import android.app.Activity;
@@ -9,6 +9,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.model.UserInformation;
 
 import java.util.ArrayList;
 

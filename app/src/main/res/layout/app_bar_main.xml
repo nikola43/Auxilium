@@ -5,76 +5,42 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pinillos.auxilium.MainActivity">
+    tools:context="com.pinillos.auxilium.activity.MainActivity">
 
-    <include
-        android:id="@+id/include"
-        layout="@layout/content_main" />
-
-    <FrameLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/mainLayout">
+        android:layout_height="match_parent">
 
-        <RelativeLayout
+        <!-- Toolbar -->
+        <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="?attr/actionBarSize"
+            android:background="#7fffffff"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            app:theme="@style/ToolbarBlackIcons" />
 
-            <fragment
-                android:id="@+id/map"
-                android:name="com.google.android.gms.maps.SupportMapFragment"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_alignBottom="@+id/fab"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                tools:context="com.pinillos.auxilium.MapsActivity"
-                tools:layout_editor_absoluteX="0dp"
-                tools:layout_editor_absoluteY="0dp" />
+        <FrameLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/bottom_navigation"
+            android:layout_below="@id/toolbar"/>
+
+        <android.support.design.widget.BottomNavigationView
+            android:id="@id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            app:itemBackground="@color/colorBottomNavigationBar"
+            app:itemIconTint="@color/colorBottomNavigationIcons"
+            app:itemTextColor="@color/colorBottomNavigationText"
+            app:menu="@menu/bottom_navigation_main" />
+
+    </RelativeLayout>
 
 
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/layerSelector"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_below="@+id/toolbar"
-                android:layout_gravity="bottom|end"
-                android:layout_marginEnd="13dp"
-                android:layout_marginRight="13dp"
-                android:layout_marginTop="12dp"
-                android:background="@android:color/white"
-                android:onClick="showLayerSelectionDialog"
-                app:backgroundTint="@android:color/white"
-                app:fabSize="mini"
-                app:layout_anchor="@+id/toolbar"
-                app:layout_anchorGravity="right|bottom"
-                app:srcCompat="@drawable/ic_select_layer" />
-
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fab"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_centerHorizontal="true"
-                android:layout_gravity="bottom|end"
-                android:layout_marginBottom="58dp"
-                android:onClick="createIncidence"
-                app:layout_anchorGravity="right|center"
-                app:srcCompat="@drawable/ic_new_incidence" />
-
-            <!-- Toolbar -->
-            <android.support.v7.widget.Toolbar xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="#7fffffff"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-                app:theme="@style/ToolbarBlackIcons" />
-
-        </RelativeLayout>
-
-    </FrameLayout>
 
 </android.support.design.widget.CoordinatorLayout>

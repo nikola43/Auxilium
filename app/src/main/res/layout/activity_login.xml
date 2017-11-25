@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pinillos.auxilium.LoginActivity">
+    tools:context="com.pinillos.auxilium.activity.LoginActivity">
 
 
         <EditText
