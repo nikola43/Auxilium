@@ -39,6 +39,7 @@ public class ShowIncidenceFragment extends Fragment {
     private DatabaseReference firebaseDatabaseReference;
     private Context mContext;
     private View view;
+    private ValueEventListener firebaseDatabaseListener;
 
     public ShowIncidenceFragment() {
         // Required empty public constructor
@@ -65,13 +66,10 @@ public class ShowIncidenceFragment extends Fragment {
         super.onActivityCreated(state);
 
         //Add firebase event listener
-//        firebaseDatabase = FirebaseDatabase.getInstance();
-//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         firebaseDatabase = MainActivity.firebaseDatabase;
         firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
 
-
-        firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+        firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 ArrayList<Incidence> incidenceArrayList = new ArrayList<>();
@@ -149,8 +147,6 @@ public class ShowIncidenceFragment extends Fragment {
 
                         Incidence incidence = (Incidence) parent.getItemAtPosition(position);
                         showIncidenceInfo(incidence);
-
-
                     }
                 });
             }
@@ -168,12 +164,9 @@ public class ShowIncidenceFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        //firebaseDatabaseReference.removeValue();
-//        if(firebaseDatabase != null){
-//            firebaseDatabaseReference.onDisconnect();
-//            //firebaseDatabase.goOffline();
-//        }
-
+        if (firebaseDatabaseListener != null) {
+            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
+        }
     }
 
     public void showIncidenceInfo(Incidence incidence)

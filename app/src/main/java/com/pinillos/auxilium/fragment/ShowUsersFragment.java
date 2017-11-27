@@ -36,6 +36,7 @@ public class ShowUsersFragment extends Fragment {
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
     private View view;
+    private ValueEventListener firebaseDatabaseListener;
 
     public ShowUsersFragment() {
         // Required empty public constructor
@@ -61,13 +62,10 @@ public class ShowUsersFragment extends Fragment {
 
 
         //Add firebase event listener
-//        firebaseDatabase = FirebaseDatabase.getInstance();
-//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         firebaseDatabase = MainActivity.firebaseDatabase;
         firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
 
-
-        firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+        firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 ArrayList<UserInformation> userInformationArrayList = new ArrayList<>();
@@ -92,21 +90,25 @@ public class ShowUsersFragment extends Fragment {
                             if (itemType.equals("information")) {
                                 UserInformation userInformation = currentItem.getValue(UserInformation.class);
 
-                                switch (userInformation.getCategory()) {
-                                    case "Medico":
-                                        drawable = getResources().getDrawable(R.mipmap.ic_medical_round);
-                                        break;
-                                    case "Bombero":
-                                        drawable = getResources().getDrawable(R.mipmap.ic_fireman_round);
-                                        break;
-                                    default:
-                                        drawable = getResources().getDrawable(R.mipmap.ic_incendio_round);
-                                        break;
+                                String userCategory = userInformation.getCategory();
+
+                                if ( userInformation != null && userInformation.getCategory() != null)
+                                {
+                                    switch (userCategory) {
+                                        case "Medico":
+                                            drawable = getResources().getDrawable(R.mipmap.ic_medical_round);
+                                            break;
+                                        case "Bombero":
+                                            drawable = getResources().getDrawable(R.mipmap.ic_fireman_round);
+                                            break;
+                                        default:
+                                            drawable = getResources().getDrawable(R.mipmap.ic_incendio_round);
+                                            break;
+                                    }
+                                    userInformation.setImagen(drawable);
+
+                                    userInformationArrayList.add(userInformation);
                                 }
-                                userInformation.setImagen(drawable);
-
-                                userInformationArrayList.add(userInformation);
-
                             }
                         }
                     }
@@ -140,10 +142,9 @@ public class ShowUsersFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        //firebaseDatabaseReference.removeValue();
-//        if (firebaseDatabaseReference != null){
-//            firebaseDatabaseReference.onDisconnect();
-//        }
+        if (firebaseDatabaseListener != null) {
+            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
+        }
     }
 
     public void showUserInfo(UserInformation userInformation)

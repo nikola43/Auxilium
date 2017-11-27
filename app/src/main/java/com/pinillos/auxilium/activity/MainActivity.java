@@ -33,6 +33,7 @@ import android.view.MenuItem;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -47,12 +48,14 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.UrlTileProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.Util.MessageUtil;
@@ -74,12 +77,14 @@ public class MainActivity extends AppCompatActivity
     private Toolbar toolbar;
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final String TAG = MainActivity.class.getSimpleName();
+
     //Firebase auth and db instances
     public static FirebaseDatabase firebaseDatabase;
     public static FirebaseAuth firebaseAuth;
     public static FirebaseAuth.AuthStateListener firebaseAuthListener;
     public static DatabaseReference firebaseDatabaseReference;
     public static FirebaseUser firebaseUser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,12 +96,12 @@ public class MainActivity extends AppCompatActivity
         configureAndInicializeBottomNavigation();
         configureAndInicializeFirebase();
 
-
      //Inicializamos el MapsFragemnts al inicio
         Fragment mapsFragment = new MapsFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.fragment_container, mapsFragment);
         transaction.commit();
+
     }
 
     private void configureAndInicializeFirebase() {
@@ -135,25 +140,21 @@ public class MainActivity extends AppCompatActivity
                 new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
-                        Fragment showIncidenceFragment = new ShowIncidenceFragment();
-                        Fragment showUsersFragment = new ShowUsersFragment();
-                        Fragment mapsFragments = new MapsFragment();
                         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                         transaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
                         switch (item.getItemId()) {
                             case R.id.action_mapa:
-                                MessageUtil.toastMessage(getApplicationContext(), "menu_uno");
+                                Fragment mapsFragments = new MapsFragment();
                                 transaction.replace(R.id.fragment_container, mapsFragments).commit();
-                                break;
+                                return true;
                             case R.id.action_incidencias:
-                                MessageUtil.toastMessage(getApplicationContext(), "menu_dos");
+                                Fragment showIncidenceFragment = new ShowIncidenceFragment();
                                 transaction.replace(R.id.fragment_container, showIncidenceFragment).commit();
-                                break;
+                                return true;
                             case R.id.action_users:
+                                Fragment showUsersFragment = new ShowUsersFragment();
                                 transaction.replace(R.id.fragment_container, showUsersFragment).commit();
-                                MessageUtil.toastMessage(getApplicationContext(), "menu_tres");
-                                break;
+                                return true;
                         }
                         return false;
                     }
@@ -212,9 +213,10 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        MessageUtil.toastMessage(this, "Funcionalidad en pruebas");
 
         if (id == R.id.nav_camera) {
+            MessageUtil.toastMessage(this, "Funcionalidad en pruebas");
+
 
         } else if (id == R.id.nav_gallery) {
 

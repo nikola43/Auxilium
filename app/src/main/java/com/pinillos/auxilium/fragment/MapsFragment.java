@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.net.Uri;
@@ -142,17 +143,19 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     private DatabaseReference firebaseDatabaseReference;
     private FirebaseUser firebaseUser;
 
-    private FloatingActionButton fabCreateIncidence,fabShowLayerSelector;
+    private FloatingActionButton fabShowLayerSelector;
+    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab;
+    private ValueEventListener firebaseDatabaseListener;
 
 
     private GoogleMap mMap;
     private String mLastUpdateTime;
     //FBA for place and layer select
-    private FloatingActionButton fabPickPlace;
-    private FloatingActionButton fabLayerSelect;
     //User info from firebase database
     private UserInformation userInformation;
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    private boolean trackingIsEnabled;
 
     @Nullable
     @Override
@@ -185,20 +188,32 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         createLocationCallback();
         createLocationRequest();
         buildLocationSettingsRequest();
-
         configureAndInicializeFireBase();
-
-        //Reference floating button
-        fabPickPlace = view.findViewById(R.id.createIncidencefab);
-        fabLayerSelect = view.findViewById(R.id.layerSelector);
-
 
         return view;
     }
 
     private void inicializeViews(View view) {
-        fabShowLayerSelector = view.findViewById(R.id.layerSelector);
-        fabShowLayerSelector.setOnClickListener(new View.OnClickListener() {
+
+        //Reference floating button
+        createIncidenceFab = view.findViewById(R.id.create_incidence_fab);
+        createIncidenceFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
+                    Intent intent = intentBuilder.build(getActivity());
+                    getActivity().startActivityForResult(intent, PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        layerSelectorFab = view.findViewById(R.id.layer_selector_fab);
+        layerSelectorFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -230,35 +245,40 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                             }
                         });
                 builder.show();
-                //return builder.create();
             }
         });
 
-
-        fabCreateIncidence = view.findViewById(R.id.createIncidencefab);
-        fabCreateIncidence.setOnClickListener(new View.OnClickListener() {
+        initTrackingFab = view.findViewById(R.id.init_tracking_fab);
+        initTrackingFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
-                    Intent intent = intentBuilder.build(getActivity());
-                    getActivity().startActivityForResult(intent, PLACE_PICKER_REQUEST);
-                } catch (GooglePlayServicesRepairableException e) {
-                    e.printStackTrace();
-                } catch (GooglePlayServicesNotAvailableException e) {
-                    e.printStackTrace();
+                trackingIsEnabled = !trackingIsEnabled;
+                if (trackingIsEnabled)
+                {
+                    MessageUtil.toastMessage(getContext(), "Tracking iniciado");
+
+                    Drawable d = getResources().getDrawable( R.drawable.ic_switch_off_tracking );
+                    initTrackingFab.setIconDrawable(d);
+                    if (!mRequestingLocationUpdates)
+                    {
+                        mRequestingLocationUpdates = true;
+                        //setButtonsEnabledState();
+                        startLocationUpdates();
+                    }
+                }
+                else
+                {
+                    MessageUtil.toastMessage(getContext(),"Tracking parado");
+                    Drawable d = getResources().getDrawable( R.drawable.ic_switch_on_tracking );
+                    initTrackingFab.setIconDrawable(d);
+                    stopLocationUpdates();
                 }
             }
         });
-
     }
 
     private void configureAndInicializeFireBase() {
         //instace firebase auth and database
-//        firebaseAuth = FirebaseAuth.getInstance();
-//        firebaseDatabase = FirebaseDatabase.getInstance();
-//        firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-//        firebaseUser = firebaseAuth.getCurrentUser();
         firebaseAuth = MainActivity.firebaseAuth;
         firebaseDatabase = MainActivity.firebaseDatabase;
         firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
@@ -278,45 +298,48 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         };
 
         //Add firebase event listener
-        firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                mMap.clear();
+        firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        mMap.clear();
 
-                Position position = null;
-                //retrieve data from database
-                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
-                    String objectType = dbObjects.getKey();
-                    //toastMessage(objectType);
-                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
-                        final String userID = currentUser.getKey();
-                        //toastMessage(userID);
-                        for (DataSnapshot currentItem : currentUser.getChildren()) {
-                            String itemType = currentItem.getKey();
-                            //toastMessage(itemType);
+                        Position position = null;
+                        //retrieve data from database
+                        for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                            String objectType = dbObjects.getKey();
+                            //toastMessage(objectType);
 
-                            for (DataSnapshot currentField : currentItem.getChildren()) {
-                               /* try {*/
+                            for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                                final String userID = currentUser.getKey();
+                                //toastMessage(userID);
 
-                                    if (itemType.equals("information")) {
-                                        userInformation = currentItem.getValue(UserInformation.class);
-                                        //toastMessage(userInformation.getFirstName());
-                                    }
+                                for (DataSnapshot currentItem : currentUser.getChildren()) {
 
-                                    if (itemType.equals("position")) {
+                                    String itemType = currentItem.getKey();
+                                    //toastMessage(itemType);
 
-                                        //retrieve position object from database
-                                        String positionID = currentField.getKey();
 
-                                        if (positionID.equals("last_position")) {
+                                    for (DataSnapshot currentField : currentItem.getChildren()) {
 
-                                            Position lastPosition = currentField.getValue(Position.class);
+                                        if (itemType.equals("information")) {
+                                            userInformation = currentItem.getValue(UserInformation.class);
+                                            //toastMessage(userInformation.getFirstName());
+                                        }
 
-                                            if (lastPosition != null) {
-                                                //toastMessage(position.getCreatorID());
-                                                userInformation = currentItem.getValue(UserInformation.class);
-                                                int userIcon;
-                                                if (userInformation != null && userInformation.getCategory() != null){
+                                        if (itemType.equals("position")) {
+
+                                            //retrieve position object from database
+                                            String positionID = currentField.getKey();
+
+                                            if (positionID.equals("last_position"))
+                                            {
+
+                                                Position lastPosition = currentField.getValue(Position.class);
+
+                                                if (lastPosition != null) {
+                                                    //toastMessage(position.getCreatorID());
+
+                                                    int userIcon;
                                                     switch (userInformation.getCategory()) {
                                                         case "Bombero":
                                                             userIcon = R.mipmap.ic_fireman_round;
@@ -337,63 +360,53 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                                                 }
                                             }
                                         }
-                                    }
 
 
-                                    //if retrieved database object are incident type
-                                    if (itemType.equals("incidence")) {
-                                        //retrieve incidence object from database
-                                        String incidenceID = currentField.getKey();
-                                        Incidence incidence = currentField.getValue(Incidence.class);
 
-                                        if (incidence != null) {
+                                        //if retrieved database object are incident type
+                                        if (itemType.equals("incidence")) {
+                                            //retrieve incidence object from database
+                                            String incidenceID = currentField.getKey();
+                                            Incidence incidence = currentField.getValue(Incidence.class);
+
                                             //according to incidence type, shows different icon
                                             int incidenceIcon;
-                                            String incidenceType = incidence.getType();
-                                            if (incidenceType != null) {
-                                                switch (incidenceType) {
-                                                    case "Riesgo Industrial":
-                                                        incidenceIcon = R.mipmap.ic_incendio_round;
-                                                        break;
-                                                    case "Riesgo por fallos en los suministros básicos":
-                                                        incidenceIcon = R.mipmap.ic_electrico_round;
-                                                        break;
-                                                    default:
-                                                        incidenceIcon = R.mipmap.ic_incendio_round;
-                                                        break;
-                                                }
-
-                                                //if the incidence is activated, add google maps marker
-                                                if (incidence.getStatus()) {
-                                                    mMap.addMarker(new MarkerOptions()
-                                                            .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                            .title(incidence.getType())
-                                                            .snippet("Creada por " + incidence.getCreatorID())
-                                                            .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                            .draggable(true));
-                                                }
+                                            switch (incidence.getType()) {
+                                                case "Incendio":
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
+                                                case "Corte luz":
+                                                    incidenceIcon = R.mipmap.ic_electrico_round;
+                                                    break;
+                                                default:
+                                                    incidenceIcon = R.mipmap.ic_incendio_round;
+                                                    break;
                                             }
 
+                                            //if the incidence is activated, add google maps marker
+                                            if (incidence.getStatus()) {
+                                                mMap.addMarker(new MarkerOptions()
+                                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                        .title(incidence.getType())
+                                                        .snippet("Creada por " + incidence.getCreatorID())
+                                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                        .draggable(true));
+                                            }
                                         }
                                     }
-                              /*  }catch (Exception e){
-                                    e.printStackTrace();
-                                    Log.e("ERROR MAPSFRAGMENTS","");
-                                }*/
+                                }
                             }
                         }
                     }
-                }
-            }
 
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                // Failed to read value
-                MessageUtil.toastMessage(getActivity(),"Failed to alter database.");
-                Log.w(TAG, "Failed to read value.", databaseError.toException());
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        // Failed to read value
+                        MessageUtil.toastMessage(getContext(),"Failed to alter database.");
+                        Log.w(TAG, "Failed to read value.", databaseError.toException());
+                    }
+                });
     }
 
 
@@ -408,6 +421,12 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     @Override
     public void onStop() {
         super.onStop();
+        if (firebaseAuthListener != null) {
+            firebaseAuth.removeAuthStateListener(firebaseAuthListener);
+        }
+        if (firebaseDatabaseListener != null) {
+            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
+        }
         mGoogleApiClient.disconnect();
 
 
@@ -422,8 +441,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     @Override
     public void onResume() {
         super.onResume();
-        // Within {@code onPause()}, we remove location updates. Here, we resume receiving
-        // location updates if the user has requested them.
+
         if (mRequestingLocationUpdates && checkPermissions()) {
             startLocationUpdates();
         } else if (!checkPermissions()) {
@@ -569,13 +587,30 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
      * Updates all UI fields.
      */
     private void updateUI() {
-        setButtonsEnabledState();
         updateLocationUI();
     }
 
+    /**
+     * Removes location updates from the FusedLocationApi.
+     */
+    private void stopLocationUpdates() {
+        if (!mRequestingLocationUpdates) {
+            Log.d(TAG, "stopLocationUpdates: updates never requested, no-op.");
+            return;
+        }
 
-
-
+        // It is a good practice to remove location requests when the activity is in a paused or
+        // stopped state. Doing so helps battery performance and is especially
+        // recommended in applications that request frequent location updates.
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+                .addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        mRequestingLocationUpdates = false;
+                        //setButtonsEnabledState();
+                    }
+                });
+    }
 
     /**
      * Sets the value of the UI fields for the location latitude, longitude and last update time.
@@ -585,23 +620,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             //MessageUtil.toastMessage(getContext(),"Lat: "+mCurrentLocation.getLatitude()+ " Lon: "+mCurrentLocation.getLatitude()+" "+" hora: "+mLastUpdateTime);
         }
     }
-
-    /**
-     * Disables both buttons when functionality is disabled due to insuffucient location settings.
-     * Otherwise ensures that only one button is enabled at any time. The Start Updates button is
-     * enabled if the user is not requesting location updates. The Stop Updates button is enabled
-     * if the user is requesting location updates.
-     */
-    private void setButtonsEnabledState() {
-        if (mRequestingLocationUpdates) {
-            //mStartUpdatesButton.setEnabled(false);
-            //mStopUpdatesButton.setEnabled(true);
-        } else {
-            //mStartUpdatesButton.setEnabled(true);
-            //mStopUpdatesButton.setEnabled(false);
-        }
-    }
-
 
     /**
      * Manipulates the map once available.
