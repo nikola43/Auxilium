@@ -199,10 +199,9 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            //firebaseAuth.signOut();
+            firebaseAuth.signOut();
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
-            //MessageUtil.toastMessage(this, "Funcionalidad en pruebas");
         }
 
         return super.onOptionsItemSelected(item);
