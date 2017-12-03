@@ -3,6 +3,8 @@ package com.pinillos.auxilium.activity;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.graphics.drawable.ColorDrawable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.content.DialogInterface;
@@ -144,14 +146,25 @@ public class MainActivity extends AppCompatActivity
                         transaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
                         switch (item.getItemId()) {
                             case R.id.action_mapa:
+                                getSupportActionBar().setDisplayShowTitleEnabled(false);
+                                toolbar.setTitle("");
+
                                 Fragment mapsFragments = new MapsFragment();
                                 transaction.replace(R.id.fragment_container, mapsFragments).commit();
                                 return true;
                             case R.id.action_incidencias:
+                                getSupportActionBar().setDisplayShowTitleEnabled(true);
+                                toolbar.setTitle("Incidencias");
+                                toolbar.setBackgroundResource(R.color.colorPrimary);
+
                                 Fragment showIncidenceFragment = new ShowIncidenceFragment();
                                 transaction.replace(R.id.fragment_container, showIncidenceFragment).commit();
                                 return true;
                             case R.id.action_users:
+                                getSupportActionBar().setDisplayShowTitleEnabled(true);
+                                toolbar.setTitle("Usuarios");
+                                toolbar.setBackgroundResource(R.color.colorPrimary);
+
                                 Fragment showUsersFragment = new ShowUsersFragment();
                                 transaction.replace(R.id.fragment_container, showUsersFragment).commit();
                                 return true;
@@ -270,7 +283,10 @@ public class MainActivity extends AppCompatActivity
 
 
                     //Write incidence to database
+
+
                     writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+
                 }
             }
         }

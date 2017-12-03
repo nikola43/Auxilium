@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/colorPrimary">
+
+    <TextView
+        android:id="@+id/incidence_type"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+
+        android:layout_marginTop="20dp"
+        android:text="Nombre incidencia"
+        android:textAlignment="center"
+        android:background="@color/white"
+        android:textColor="#000000"/>
+
+    <TextView
+        android:id="@+id/incidence_level"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+
+        android:layout_marginTop="60dp"
+        android:text="Nivel emergencia"
+        android:textAlignment="center"
+        android:background="@color/white"
+        android:textColor="#000000"/>
+
+    <TextView
+        android:id="@+id/incidence_severity"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+
+        android:layout_marginTop="100dp"
+        android:text="Nivel gravedad"
+        android:textAlignment="center"
+        android:background="@color/white"
+        android:textColor="#000000"/>
+
+    <TextView
+        android:id="@+id/incidence_creation_date"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+
+        android:layout_marginTop="140dp"
+        android:text="Fecha creacion"
+        android:textAlignment="center"
+        android:background="@color/white"
+        android:textColor="#000000"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/add_user_to_incidence_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="15dp"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="15dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="15dp"
+
+        android:layout_alignTop="@+id/incidence_creation_date"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:src="@drawable/ic_add_user_to_incidence"
+        app:borderWidth="0dp"
+        app:elevation="6dp"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/test"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginLeft="80dp"
+
+        android:layout_alignTop="@+id/incidence_creation_date"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:src="@drawable/ic_show_incidence_position"
+        app:borderWidth="0dp"
+        app:elevation="6dp"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/test2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_alignTop="@+id/test3"
+        android:layout_marginEnd="27dp"
+        android:layout_marginRight="27dp"
+        android:layout_toLeftOf="@+id/test3"
+        android:layout_toStartOf="@+id/test3"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:src="@drawable/ic_show_organization_chart"
+        app:borderWidth="0dp"
+        app:elevation="6dp"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/test3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="15dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginRight="15dp"
+        android:layout_marginEnd="15dp"
+
+        android:layout_alignTop="@+id/incidence_creation_date"
+        android:backgroundTint="@color/colorPrimaryDark"
+        android:src="@drawable/ic_chat_incidence"
+        app:borderWidth="0dp"
+        app:elevation="6dp"/>
+
+</RelativeLayout>

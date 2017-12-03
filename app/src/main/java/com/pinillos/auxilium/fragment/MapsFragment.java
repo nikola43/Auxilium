@@ -162,6 +162,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_maps, null);
 
+        trackingIsEnabled = false;
         inicializeViews(view);
 
         //Add support to map fragment
@@ -190,6 +191,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         buildLocationSettingsRequest();
         configureAndInicializeFireBase();
 
+        stopLocationUpdates();
         return view;
     }
 
@@ -271,6 +273,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                     MessageUtil.toastMessage(getContext(),"Tracking parado");
                     Drawable d = getResources().getDrawable( R.drawable.ic_switch_on_tracking );
                     initTrackingFab.setIconDrawable(d);
+
                     stopLocationUpdates();
                 }
             }
@@ -442,11 +445,10 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public void onResume() {
         super.onResume();
 
-        if (mRequestingLocationUpdates && checkPermissions()) {
-            startLocationUpdates();
-        } else if (!checkPermissions()) {
+        getLastLocation();
+
+        if (!checkPermissions())
             requestPermissions();
-        }
 
         updateUI();
     }
@@ -463,8 +465,12 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                 mCurrentLocation = locationResult.getLastLocation();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
-                writeUserPositionToFirebaseDB(firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), mLastUpdateTime);
+                //MessageUtil.toastMessage(getContext(), mCurrentLocation.toString());
 
+                if ( mCurrentLocation != null )
+                {
+                    writeUserPositionToFirebaseDB(firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), mLastUpdateTime);
+                }
                 updateLocationUI();
             }
         };
@@ -485,7 +491,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
         String positionID = firebaseDatabaseReference.push().getKey();
 
-        Position myPosition = new Position(firebaseUser.getEmail(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), getCurrentTimeStamp());
+        Position myPosition = new Position(creatorID, lat, lon, currentTimeStamp);
         firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("position").child(positionID).setValue(myPosition);
         firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("position").child("last_position").setValue(myPosition);
     }

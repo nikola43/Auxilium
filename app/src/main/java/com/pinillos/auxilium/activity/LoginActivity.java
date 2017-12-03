@@ -1,5 +1,6 @@
 package com.pinillos.auxilium.activity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -105,6 +106,7 @@ public class LoginActivity extends AppCompatActivity {
         if(!email.equals("") && !pass.equals(""))
         {
             //ProgressDialog dialog = ProgressDialog.show(LoginActivity.this, "Espere por favor", "Conectandose...", false);
+            final ProgressDialog dialog = ProgressDialog.show(LoginActivity.this, "Conectando", "Espere por favor");
 
             mAuth.signInWithEmailAndPassword(email, pass)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -113,6 +115,7 @@ public class LoginActivity extends AppCompatActivity {
                             if (task.isSuccessful()) {
                                 // Sign in success, update UI with the signed-in user's information
                                 Log.d(TAG, "signInWithEmail:success");
+                                dialog.dismiss();
                                 //updateUI(user);
                             } else {
                                 // If sign in fails, display a message to the user.

@@ -65,7 +65,7 @@ public class UserInformationAdapterItem extends BaseAdapter {
         TextView title = (TextView) v.findViewById(R.id.user_group);
         title.setText(userInformation.getCategory());
 
-        TextView description = (TextView) v.findViewById(R.id.user_name);
+        TextView description = (TextView) v.findViewById(R.id.user_fname);
         description.setText(userInformation.getFirstName());
 
         ImageView imagen = (ImageView) v.findViewById(R.id.user_item);

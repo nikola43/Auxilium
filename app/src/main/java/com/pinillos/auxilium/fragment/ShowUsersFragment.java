@@ -2,6 +2,7 @@ package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -48,6 +50,7 @@ public class ShowUsersFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_show_users, container, false);
+
 
 
         return view;
@@ -149,13 +152,29 @@ public class ShowUsersFragment extends Fragment {
 
     public void showUserInfo(UserInformation userInformation)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setMessage(
-                "Categoria: "+userInformation.getCategory()+"\n"+
-                "Grupo: "    +userInformation.getGroup() + "\n" +
-                "Nombre: "   +userInformation.getFirstName() + "\n" +
-                "Apellidos: "+userInformation.getLastName1()+" "+userInformation.getLastName2()+ "\n")
-                .setPositiveButton("Asignar incidencia", new DialogInterface.OnClickListener() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        // Get the layout inflater
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+
+        View view = inflater.inflate(R.layout.users_list_onclick, null);
+
+        TextView userCategory = view.findViewById(R.id.user_category);
+        userCategory.setText(userInformation.getCategory());
+
+        TextView userGroup = view.findViewById(R.id.user_group);
+        userGroup.setText(userInformation.getGroup());
+
+        TextView userFname = view.findViewById(R.id.user_fname);
+        userFname.setText(userInformation.getFirstName());
+
+        TextView userLname = view.findViewById(R.id.user_lname);
+        userLname.setText(userInformation.getLastName1());
+
+        builder.setView(view.getRootView())
+                // Add action buttons
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
                     public void onClick(DialogInterface dialog, int id) {
 
                     }
@@ -165,7 +184,6 @@ public class ShowUsersFragment extends Fragment {
 
                     }
                 });
-        // Create the AlertDialog object and return it
         builder.show();
     }
 

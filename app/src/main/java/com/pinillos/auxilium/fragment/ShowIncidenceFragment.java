@@ -2,6 +2,7 @@ package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
@@ -13,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -53,6 +55,8 @@ public class ShowIncidenceFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_incidence, container, false);
+
+
 
 
 
@@ -171,13 +175,24 @@ public class ShowIncidenceFragment extends Fragment {
 
     public void showIncidenceInfo(Incidence incidence)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setMessage("Incidence creada por:" +
-                "Tipo: " + incidence.getType() + "\n" +
-                "Estado: " + incidence.getStatus()+ "\n" +
-                "Fecha/hora: " + incidence.getTimestamp() + "\n" +
-                "Creador: " + incidence.getCreatorID()+ "\n")
-                .setPositiveButton("Asignar usuarios", new DialogInterface.OnClickListener() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        // Get the layout inflater
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+
+        View view = inflater.inflate(R.layout.incidence_list_onclick, null);
+
+        TextView incidenceType = view.findViewById(R.id.incidence_type);
+        incidenceType.setText(incidence.getType());
+
+        TextView creationDate = view.findViewById(R.id.incidence_creation_date);
+        creationDate.setText(incidence.getTimestamp());
+
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(view.getRootView())
+                // Add action buttons
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
                     public void onClick(DialogInterface dialog, int id) {
 
                     }
@@ -187,7 +202,6 @@ public class ShowIncidenceFragment extends Fragment {
 
                     }
                 });
-        // Create the AlertDialog object and return it
         builder.show();
     }
 }
