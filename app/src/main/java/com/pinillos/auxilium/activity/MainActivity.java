@@ -133,6 +133,7 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
     }
 
     private void configureAndInicializeBottomNavigation() {
@@ -147,7 +148,7 @@ public class MainActivity extends AppCompatActivity
                         switch (item.getItemId()) {
                             case R.id.action_mapa:
                                 getSupportActionBar().setDisplayShowTitleEnabled(false);
-                                toolbar.setTitle("");
+                                toolbar.setBackgroundResource(R.color.transparent);
 
                                 Fragment mapsFragments = new MapsFragment();
                                 transaction.replace(R.id.fragment_container, mapsFragments).commit();
