@@ -4,7 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
+import android.provider.MediaStore;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.content.DialogInterface;
@@ -58,6 +60,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.Util.MessageUtil;
@@ -75,7 +79,7 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private int PLACE_PICKER_REQUEST = 1;
+    private final static int PLACE_PICKER_REQUEST = 1;
     private Toolbar toolbar;
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -86,6 +90,7 @@ public class MainActivity extends AppCompatActivity
     public static FirebaseAuth.AuthStateListener firebaseAuthListener;
     public static DatabaseReference firebaseDatabaseReference;
     public static FirebaseUser firebaseUser;
+    public static StorageReference storageReference;
 
 
     @Override
@@ -112,6 +117,7 @@ public class MainActivity extends AppCompatActivity
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         firebaseUser = firebaseAuth.getCurrentUser();
+        storageReference = FirebaseStorage.getInstance().getReference();
 
         //User login
         firebaseAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -250,6 +256,18 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+/*
+            if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+                Bundle extras = data.getExtras();
+                Bitmap imageBitmap = (Bitmap) extras.get("data");
+               // imageView.setImageBitmap(imageBitmap);
+
+                MediaStore.Images.Media.insertImage(getContentResolver(), imageBitmap, "fd" , "f");
+
+            }
+            */
+
         switch (requestCode) {
             // Check for the integer request code originally supplied to startResolutionForResult().
             case REQUEST_CHECK_SETTINGS:

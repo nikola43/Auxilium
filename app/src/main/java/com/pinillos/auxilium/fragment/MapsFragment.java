@@ -2,26 +2,35 @@ package com.pinillos.auxilium.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -61,15 +70,23 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.pinillos.auxilium.AuxiliumApplication;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.pinillos.auxilium.BuildConfig;
+import com.pinillos.auxilium.model.ImageInfo;
 import com.pinillos.auxilium.model.Incidence;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.model.UserInformation;
 import com.pinillos.auxilium.Util.MessageUtil;
 import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.Position;
+import com.squareup.picasso.Picasso;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -136,16 +153,19 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
      */
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+
     //Firebase auth and db instances
     private FirebaseDatabase firebaseDatabase;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener firebaseAuthListener;
     private DatabaseReference firebaseDatabaseReference;
     private FirebaseUser firebaseUser;
+    private StorageReference storageReference;
 
-    private FloatingActionButton fabShowLayerSelector;
-    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab;
+    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab, addPhotoFab;
     private ValueEventListener firebaseDatabaseListener;
+    private GoogleMap.OnMarkerClickListener onMarkerClickListener;
 
 
     private GoogleMap mMap;
@@ -156,6 +176,10 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private boolean trackingIsEnabled;
+
+    ImageLoader imageLoader;
+
+    String mCurrentPhotoPath;
 
     @Nullable
     @Override
@@ -192,7 +216,21 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         configureAndInicializeFireBase();
 
         stopLocationUpdates();
+
+        checkCameraPermissions();
+
+        ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton instance
+        imageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
+
         return view;
+    }
+
+    private void checkCameraPermissions()
+    {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            //takePictureButton.setEnabled(false);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        }
     }
 
     private void inicializeViews(View view) {
@@ -278,7 +316,92 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                 }
             }
         });
+
+        addPhotoFab = view.findViewById(R.id.add_photo_fab);
+        addPhotoFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                dispatchTakePictureIntent();
+            }
+        });
+
     }
+
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            if (photoFile != null)
+            {
+                Uri uri = FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider",photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+            //MarkGeoTagImage(mCurrentPhotoPath,mCurrentLocation);
+
+
+            Uri file = Uri.fromFile(new File(mCurrentPhotoPath));
+            final String imageName = file.toString().split("/")[11];
+            StorageReference riversRef = storageReference.child("images/"+imageName);
+            riversRef.putFile(file)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            // Get a URL to the uploaded content
+                            Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                            writeNewImageInfoToDB(imageName, downloadUrl.toString(), firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), getCurrentTimeStamp());
+
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            // Handle unsuccessful uploads
+                            // ...
+                        }
+                    });
+
+            MessageUtil.toastMessage(getContext(),"Foto guardada en la galeria");
+        }
+    }
+
+
+    private void writeNewImageInfoToDB(String name, String url, String creadorID, double lat, double lon, String timeStamp){
+        ImageInfo info = new ImageInfo(name, url, creadorID, lat, lon, timeStamp);
+
+        String key = firebaseDatabaseReference.push().getKey();
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("images").child(key).setValue(info);
+    }
+
+
 
     private void configureAndInicializeFireBase() {
         //instace firebase auth and database
@@ -286,6 +409,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         firebaseDatabase = MainActivity.firebaseDatabase;
         firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
         firebaseUser = MainActivity.firebaseUser;
+        storageReference = MainActivity.storageReference;
 
         //User login
         firebaseAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -374,27 +498,59 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
                                             //according to incidence type, shows different icon
                                             int incidenceIcon;
-                                            switch (incidence.getType()) {
-                                                case "Incendio":
-                                                    incidenceIcon = R.mipmap.ic_incendio_round;
-                                                    break;
-                                                case "Corte luz":
-                                                    incidenceIcon = R.mipmap.ic_electrico_round;
-                                                    break;
-                                                default:
-                                                    incidenceIcon = R.mipmap.ic_incendio_round;
-                                                    break;
-                                            }
 
-                                            //if the incidence is activated, add google maps marker
-                                            if (incidence.getStatus()) {
-                                                mMap.addMarker(new MarkerOptions()
-                                                        .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                        .title(incidence.getType())
-                                                        .snippet("Creada por " + incidence.getCreatorID())
-                                                        .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                        .draggable(true));
+                                            if ( incidence != null && incidence.getType() != null)
+                                            {
+                                                switch (incidence.getType()) {
+                                                    case "Incendio":
+                                                        incidenceIcon = R.mipmap.ic_incendio_round;
+                                                        break;
+                                                    case "Corte luz":
+                                                        incidenceIcon = R.mipmap.ic_electrico_round;
+                                                        break;
+                                                    default:
+                                                        incidenceIcon = R.mipmap.ic_incendio_round;
+                                                        break;
+                                                }
+
+                                                //if the incidence is activated, add google maps marker
+                                                if (incidence.getStatus()) {
+                                                    mMap.addMarker(new MarkerOptions()
+                                                            .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                            .title(incidence.getType())
+                                                            .snippet("Creada por " + incidence.getCreatorID())
+                                                            .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                            .draggable(true));
+                                                }
                                             }
+                                        }
+
+                                        //if retrieved database object are incident type
+                                        if (itemType.equals("images"))
+                                        {
+                                            //retrieve incidence object from database
+                                            String imageID = currentField.getKey();
+                                            final ImageInfo imageInfo = currentField.getValue(ImageInfo.class);
+
+
+                                            MessageUtil.toastMessage(getContext(),imageInfo.getName());
+                                            imageLoader = ImageLoader.getInstance(); // Get singleton instance
+
+                                            imageLoader.loadImage(imageInfo.getUrl(), new SimpleImageLoadingListener()
+                                            {
+                                                @Override
+                                                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage)
+                                                {
+                                                    Bitmap resizedBitmap = Bitmap.createScaledBitmap(
+                                                            loadedImage, 100, 100, false);
+
+                                                    mMap.addMarker(new MarkerOptions()
+                                                            .position(new LatLng(imageInfo.getLat(), imageInfo.getLon()))
+                                                            .title("Foto")
+                                                            .snippet(imageInfo.getTimeStamp())
+                                                            .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap)));
+                                                }
+                                            });
                                         }
                                     }
                                 }
@@ -411,6 +567,9 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                     }
                 });
     }
+
+
+
 
 
     @Override
@@ -644,7 +803,38 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        //mMap.setOnInfoWindowClickListener(getActivity());
+
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                if ( marker.getTitle().equals("Foto")) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    // Get the layout inflater
+                    LayoutInflater inflater = getActivity().getLayoutInflater();
+
+                    View view = inflater.inflate(R.layout.show_marker_image, null);
+
+                    ImageView imageView = view.findViewById(R.id.show_marker_image_view);
+                    imageView.setImageResource(R.mipmap.ic_fireman_round);
+
+                    builder.setView(view.getRootView())
+                            // Add action buttons
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                }
+                            })
+                            .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                }
+                            });
+                    builder.show();
+                }
+            }
+        });
+
         mMap.setMyLocationEnabled(true);
 
 
@@ -720,6 +910,14 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         Log.i(TAG, "onRequestPermissionResult");
+
+        if (requestCode == 0) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                //takePictureButton.setEnabled(true);
+            }
+        }
+
         if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
             if (grantResults.length <= 0) {
                 // If user interaction was interrupted, the permission request is cancelled and you

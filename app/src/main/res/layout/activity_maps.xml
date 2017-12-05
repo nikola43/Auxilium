@@ -50,12 +50,13 @@
 
 
         <com.getbase.floatingactionbutton.FloatingActionButton
-            android:id="@+id/action_c"
+            android:id="@+id/add_photo_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             fab:fab_colorNormal="#0000FF"
             fab:fab_colorPressed="@color/white_pressed"
-            fab:fab_size="mini"/>
+            fab:fab_size="mini"
+            fab:fab_icon="@drawable/ic_menu_camera"/>
 
         <com.getbase.floatingactionbutton.FloatingActionButton
             android:id="@+id/init_tracking_fab"
