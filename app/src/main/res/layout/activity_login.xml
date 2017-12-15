@@ -20,7 +20,7 @@
 
         <EditText
             android:id="@+id/email"
-            android:layout_width="300dp"
+            android:layout_width="300sp"
             android:layout_height="wrap_content"
             android:layout_above="@+id/email_sign_in_button"
             android:layout_centerHorizontal="true"
@@ -64,6 +64,7 @@
             android:layout_marginBottom="33dp"
             android:onClick="logIn"
             android:text="Conectarse"
+            android:textColor="@color/colorPrimaryDark"
             android:textStyle="bold"
             tools:layout_editor_absoluteX="0dp"
             tools:layout_editor_absoluteY="312dp" />

@@ -4,10 +4,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -15,6 +17,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Looper;
@@ -155,6 +158,8 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
 
+    private static final int REQUEST_VIDEO_CAPTURE = 300;
+
     //Firebase auth and db instances
     private FirebaseDatabase firebaseDatabase;
     private FirebaseAuth firebaseAuth;
@@ -163,7 +168,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     private FirebaseUser firebaseUser;
     private StorageReference storageReference;
 
-    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab, addPhotoFab;
+    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab, addPhotoFab, addVideoFab;
     private ValueEventListener firebaseDatabaseListener;
     private GoogleMap.OnMarkerClickListener onMarkerClickListener;
 
@@ -180,6 +185,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     ImageLoader imageLoader;
 
     String mCurrentPhotoPath;
+    String mCurrentThumbnailPhotoPath;
 
     @Nullable
     @Override
@@ -326,6 +332,38 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             }
         });
 
+        addVideoFab = view.findViewById(R.id.add_video_fab);
+        addVideoFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+                Uri fileUri = FileProvider.getUriForFile(getActivity().getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider",createVideoFile());
+
+                takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+                if (takeVideoIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                    startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+                }
+            }
+        });
+
+    }
+
+    private File createVideoFile() {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = timeStamp + "_";
+        File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+        File image = null;
+        try {
+            image = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".mp4",         /* suffix */
+                    storageDir      /* directory */
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
     }
 
     private void dispatchTakePictureIntent() {
@@ -362,23 +400,35 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         return image;
     }
 
+
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            //MarkGeoTagImage(mCurrentPhotoPath,mCurrentLocation);
+
+            Uri imageFile = Uri.fromFile(new File(mCurrentPhotoPath));
+            Uri thumbnailImageFile = null;
+            final String imageName = imageFile.toString().split("/")[11];
+            final String thumbnailName = "thumbnail_"+imageName;
+
+            Bitmap resized = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imageFile.getPath()), 512, 512);
+            String thumbailPath = MediaStore.Images.Media.insertImage(getActivity().getContentResolver(), resized, thumbnailName, "");
+
+                if ( thumbailPath != null )
+                {
+                    MessageUtil.toastMessage(getContext(),thumbailPath+thumbnailName);
+                    thumbnailImageFile = Uri.fromFile(new File(thumbailPath+thumbnailName));
+                }
 
 
-            Uri file = Uri.fromFile(new File(mCurrentPhotoPath));
-            final String imageName = file.toString().split("/")[11];
-            StorageReference riversRef = storageReference.child("images/"+imageName);
-            riversRef.putFile(file)
+            StorageReference imageRef = storageReference.child("images/"+imageName);
+            imageRef.putFile(imageFile)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                         @Override
                         public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                             // Get a URL to the uploaded content
                             Uri downloadUrl = taskSnapshot.getDownloadUrl();
                             writeNewImageInfoToDB(imageName, downloadUrl.toString(), firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), getCurrentTimeStamp());
-
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -389,7 +439,35 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                         }
                     });
 
+
+            StorageReference thumbnailImageRef = storageReference.child("images/"+thumbnailName);
+            thumbnailImageRef.putFile(thumbnailImageFile)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            // Get a URL to the uploaded content
+                            Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                            writeNewImageInfoToDB(imageName, downloadUrl.toString(), firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), getCurrentTimeStamp());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            // Handle unsuccessful uploads
+                            // ...
+                        }
+                    });
+
+
+
             MessageUtil.toastMessage(getContext(),"Foto guardada en la galeria");
+        }
+
+
+        if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == Activity.RESULT_OK) {
+                //Uri videoUri = data.getData();
+
+            MessageUtil.toastMessage(getContext(),"Video guardada en la galeria");
         }
     }
 
@@ -401,6 +479,19 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("images").child(key).setValue(info);
     }
 
+    public static Bitmap getThumbnail(ContentResolver cr, String path) throws Exception {
+
+        Cursor ca = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[] { MediaStore.MediaColumns._ID }, MediaStore.MediaColumns.DATA + "=?", new String[] {path}, null);
+        if (ca != null && ca.moveToFirst()) {
+            int id = ca.getInt(ca.getColumnIndex(MediaStore.MediaColumns._ID));
+            ca.close();
+            return MediaStore.Images.Thumbnails.getThumbnail(cr, id, MediaStore.Images.Thumbnails.MICRO_KIND, null );
+        }
+
+        ca.close();
+        return null;
+
+    }
 
 
     private void configureAndInicializeFireBase() {

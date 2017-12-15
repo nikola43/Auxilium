@@ -1,4 +1,5 @@
-package com.pinillos.auxilium.Others;
+package com.pinillos.auxilium.Adapter;
+
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,17 +11,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.pinillos.auxilium.R;
-import com.pinillos.auxilium.model.Incidence;
+import com.pinillos.auxilium.model.UserInformation;
 
 import java.util.ArrayList;
 
-
-public class IncidenceAdapterItem extends BaseAdapter {
+public class UserInformationAdapterItem extends BaseAdapter {
 
     protected Activity activity;
-    protected ArrayList<Incidence> items;
+    protected ArrayList<UserInformation> items;
 
-    public IncidenceAdapterItem(Activity activity, ArrayList<Incidence> items) {
+    public UserInformationAdapterItem(Activity activity, ArrayList<UserInformation> items) {
         this.activity = activity;
         this.items = items;
     }
@@ -34,7 +34,7 @@ public class IncidenceAdapterItem extends BaseAdapter {
         items.clear();
     }
 
-    public void addAll(ArrayList<Incidence> category) {
+    public void addAll(ArrayList<UserInformation> category) {
         for (int i = 0; i < category.size(); i++) {
             items.add(category.get(i));
         }
@@ -57,19 +57,19 @@ public class IncidenceAdapterItem extends BaseAdapter {
 
         if (convertView == null) {
             LayoutInflater inf = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            v = inf.inflate(R.layout.incidence_list_view_layout, null);
+            v = inf.inflate(R.layout.users_list_view_layout, null);
         }
 
-        Incidence incidence = items.get(position);
+        UserInformation userInformation = items.get(position);
 
-        TextView title = (TextView) v.findViewById(R.id.nombre_incidencia);
-        title.setText(incidence.getType());
+        TextView title = (TextView) v.findViewById(R.id.user_group);
+        title.setText(userInformation.getCategory());
 
-        TextView description = (TextView) v.findViewById(R.id.fecha_hora);
-        description.setText(incidence.getTimestamp());
+        TextView description = (TextView) v.findViewById(R.id.user_fname);
+        description.setText(userInformation.getFirstName());
 
-        ImageView imagen = (ImageView) v.findViewById(R.id.incidence_item);
-        imagen.setImageDrawable(incidence.getImage());
+        ImageView imagen = (ImageView) v.findViewById(R.id.user_item);
+        imagen.setImageDrawable(userInformation.getImagen());
 
         return v;
     }

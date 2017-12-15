@@ -8,41 +8,33 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.pinillos.auxilium.Others.SendPasswordResetEmail;
-import com.pinillos.auxilium.Others.SignUpNewUserActivity;
 import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.Util.MessageUtil;
 
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
-
-    //Firebase authe
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
-
-    // UI references
     private EditText mEmail, mPassword;
-    private TextView signUpText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_login);
 
-
+        //Reference UI items
+        mEmail = findViewById(R.id.email);
+        mPassword = findViewById(R.id.password);
 
         //Get auth instance
         mAuth = FirebaseAuth.getInstance();
-
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -57,12 +49,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         };
-
-        //Reference UI items
-        mEmail = findViewById(R.id.email);
-        mPassword = findViewById(R.id.password);
-        signUpText = findViewById(R.id.singUpText);
-}
+    }
 
     @Override
     public void onStart() {
@@ -74,10 +61,8 @@ public class LoginActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
 
-        //Remove AuthListerner
-        if (mAuthListener != null) {
+        if (mAuthListener != null)
             mAuth.removeAuthStateListener(mAuthListener);
-        }
     }
 
     public void goToSignUpNewUserActivity(View view)
@@ -90,18 +75,15 @@ public class LoginActivity extends AppCompatActivity {
     public void goToSendPasswordResetEmailActivity(View view)
     {
         //Go to main activity
-        Intent intent = new Intent(LoginActivity.this, SendPasswordResetEmail.class);
+        Intent intent = new Intent(LoginActivity.this, SendPasswordResetEmailActivity.class);
         startActivity(intent);
     }
-
 
 
     public void logIn(View view)
     {
         String email = mEmail.getText().toString();
         String pass = mPassword.getText().toString();
-
-
 
         if(!email.equals("") && !pass.equals(""))
         {
@@ -113,47 +95,39 @@ public class LoginActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if (task.isSuccessful()) {
+                                dialog.dismiss();
                                 // Sign in success, update UI with the signed-in user's information
                                 Log.d(TAG, "signInWithEmail:success");
-                                dialog.dismiss();
-                                //updateUI(user);
+                                MessageUtil.toastMessage(getApplicationContext(), "Logueado correctamente.");
+
                             } else {
+                                dialog.dismiss();
                                 // If sign in fails, display a message to the user.
                                 Log.w(TAG, "signInWithEmail:failure", task.getException());
 
-                                String excetionType = task.getException().toString().split(":")[0];
-                                switch (excetionType)
+                                String exceptionType = task.getException().toString().split(":")[0];
+
+                                switch (exceptionType)
                                 {
                                     //wrong password
                                     case "com.google.firebase.auth.FirebaseAuthInvalidCredentialsException":
-                                        toastMessage("La contraseña es incorrecta");
+                                        MessageUtil.toastMessage(getApplicationContext(),"La contraseña es incorrecta");
                                     break;
 
                                     //user does not exist
                                     case "com.google.firebase.auth.FirebaseAuthInvalidUserException":
-                                        toastMessage("El usuario no existe");
+                                        MessageUtil.toastMessage(getApplicationContext(),"El usuario no existe");
                                     break;
                                 }
-                                //updateUI(null);
                             }
-
-                            // ...
                         }
                     });
 
         //check if email or pass are empty
         }else if (email.equals("")){
-            toastMessage("Introduzca su correo electrónico");
+            MessageUtil.toastMessage(getApplicationContext(),"Introduzca su correo electrónico");
         }else if (pass.equals("")){
-            toastMessage("Introduzca su contraseña");
+            MessageUtil.toastMessage(getApplicationContext(),"Introduzca su contraseña");
         }
-    }
-
-    /**
-     * customizable toast
-     * @param message
-     */
-    private void toastMessage(String message){
-        Toast.makeText(this,message, Toast.LENGTH_SHORT).show();
     }
 }

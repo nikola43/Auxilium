@@ -1,31 +1,19 @@
 package com.pinillos.auxilium.activity;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
-import android.provider.MediaStore;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.location.Location;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -34,45 +22,23 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ListView;
-import android.widget.Toast;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.UrlTileProvider;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.Util.MessageUtil;
 import com.pinillos.auxilium.fragment.MapsFragment;
-import com.pinillos.auxilium.fragment.ShowIncidenceFragment;
-import com.pinillos.auxilium.fragment.ShowUsersFragment;
+import com.pinillos.auxilium.fragment.IncidenceFragment;
+import com.pinillos.auxilium.fragment.UsersFragment;
 import com.pinillos.auxilium.model.Incidence;
-import com.pinillos.auxilium.model.UserInformation;
 
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -164,7 +130,7 @@ public class MainActivity extends AppCompatActivity
                                 toolbar.setTitle("Incidencias");
                                 toolbar.setBackgroundResource(R.color.colorPrimary);
 
-                                Fragment showIncidenceFragment = new ShowIncidenceFragment();
+                                Fragment showIncidenceFragment = new IncidenceFragment();
                                 transaction.replace(R.id.fragment_container, showIncidenceFragment).commit();
                                 return true;
                             case R.id.action_users:
@@ -172,7 +138,7 @@ public class MainActivity extends AppCompatActivity
                                 toolbar.setTitle("Usuarios");
                                 toolbar.setBackgroundResource(R.color.colorPrimary);
 
-                                Fragment showUsersFragment = new ShowUsersFragment();
+                                Fragment showUsersFragment = new UsersFragment();
                                 transaction.replace(R.id.fragment_container, showUsersFragment).commit();
                                 return true;
                         }

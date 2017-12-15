@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pinillos.auxilium.fragment.ShowIncidenceFragment">
+    tools:context="com.pinillos.auxilium.fragment.IncidenceFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"

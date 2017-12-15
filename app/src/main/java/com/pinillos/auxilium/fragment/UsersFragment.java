@@ -2,7 +2,6 @@ package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -24,7 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.UserInformation;
-import com.pinillos.auxilium.Adapters.UserInformationAdapterItem;
+import com.pinillos.auxilium.Adapter.UserInformationAdapterItem;
 import com.pinillos.auxilium.model.Position;
 
 import java.util.ArrayList;
@@ -32,15 +31,15 @@ import java.util.ArrayList;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ShowUsersFragment extends Fragment {
+public class UsersFragment extends Fragment {
 
-    private static final String TAG = "ShowUsersFragment";
+    private static final String TAG = "UsersFragment";
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
     private View view;
     private ValueEventListener firebaseDatabaseListener;
 
-    public ShowUsersFragment() {
+    public UsersFragment() {
         // Required empty public constructor
     }
 

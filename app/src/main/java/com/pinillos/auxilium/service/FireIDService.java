@@ -1,4 +1,4 @@
-package com.pinillos.auxilium.Others;
+package com.pinillos.auxilium.service;
 
 
 import android.util.Log;
@@ -12,6 +12,5 @@ public class FireIDService extends FirebaseInstanceIdService
     public void onTokenRefresh() {
         String tkn = FirebaseInstanceId.getInstance().getToken();
         Log.d("Not","Token ["+tkn+"]");
-
     }
 }

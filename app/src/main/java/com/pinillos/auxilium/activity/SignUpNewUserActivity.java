@@ -1,4 +1,4 @@
-package com.pinillos.auxilium.Others;
+package com.pinillos.auxilium.activity;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -20,7 +20,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinillos.auxilium.R;
-import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.UserInformation;
 
 public class SignUpNewUserActivity extends AppCompatActivity {

@@ -3,7 +3,7 @@ package com.pinillos.auxilium.model;
 
 import android.graphics.drawable.Drawable;
 
-public class UserInformation
+public class    UserInformation
 {
     //attributes
     private String userID, firstName, lastName1, lastName2, dni, email, group, category;

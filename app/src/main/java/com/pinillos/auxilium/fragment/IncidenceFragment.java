@@ -2,7 +2,6 @@ package com.pinillos.auxilium.fragment;
 
 
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
@@ -24,7 +23,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.Incidence;
-import com.pinillos.auxilium.Others.IncidenceAdapterItem;
+import com.pinillos.auxilium.Adapter.IncidenceAdapterItem;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.model.Position;
 
@@ -34,16 +33,16 @@ import java.util.ArrayList;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ShowIncidenceFragment extends Fragment {
+public class IncidenceFragment extends Fragment {
 
-    private static final String TAG = "ShowIncidenceFragment";
+    private static final String TAG = "IncidenceFragment";
     private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
     private Context mContext;
     private View view;
     private ValueEventListener firebaseDatabaseListener;
 
-    public ShowIncidenceFragment() {
+    public IncidenceFragment() {
         // Required empty public constructor
     }
 

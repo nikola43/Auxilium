@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.RECORD_VIDEO"/>
     <uses-feature android:name="android.hardware.camera"
         android:required="true" />
 
@@ -82,21 +84,18 @@
             android:name=".fragment.MapsActivity"
             android:label="@string/title_activity_maps" />
 
-        <service android:name=".Others.MyFirebaseMessagingService">
+        <service android:name=".service.MyFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <service android:name=".Others.FireIDService">
+        <service android:name=".service.FireIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service
-            android:name=".Others.DetectedActivitiesIntentService"
-            android:exported="false" />
 
-        <activity android:name=".Others.SignUpNewUserActivity" />
-        <activity android:name=".Others.SendPasswordResetEmail"/>
+        <activity android:name=".activity.SignUpNewUserActivity" />
+        <activity android:name=".activity.SendPasswordResetEmailActivity"/>
     </application>
 </manifest>

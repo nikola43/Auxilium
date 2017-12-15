@@ -41,12 +41,13 @@
 
 
         <com.getbase.floatingactionbutton.FloatingActionButton
-            android:id="@+id/action_e"
+            android:id="@+id/add_video_fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             fab:fab_colorNormal="#FF00FF"
             fab:fab_colorPressed="@color/white_pressed"
-            fab:fab_size="mini"/>
+            fab:fab_size="mini"
+            android:src="@drawable/ic_record_video"/>
 
 
         <com.getbase.floatingactionbutton.FloatingActionButton
