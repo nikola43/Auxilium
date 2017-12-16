@@ -15,7 +15,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.pinillos.auxilium.R;
-import com.pinillos.auxilium.Util.MessageUtil;
+import com.pinillos.auxilium.util.MessageUtil;
 
 public class LoginActivity extends AppCompatActivity {
 

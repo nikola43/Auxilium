@@ -22,8 +22,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.pinillos.auxilium.activity.MainActivity;
+import com.pinillos.auxilium.dialog.IncidenceOnClickDialog;
 import com.pinillos.auxilium.model.Incidence;
-import com.pinillos.auxilium.Adapter.IncidenceAdapterItem;
+import com.pinillos.auxilium.adapter.IncidenceAdapterItem;
 import com.pinillos.auxilium.R;
 import com.pinillos.auxilium.model.Position;
 
@@ -174,33 +175,6 @@ public class IncidenceFragment extends Fragment {
 
     public void showIncidenceInfo(Incidence incidence)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        // Get the layout inflater
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-
-        View view = inflater.inflate(R.layout.incidence_list_onclick, null);
-
-        TextView incidenceType = view.findViewById(R.id.incidence_type);
-        incidenceType.setText(incidence.getType());
-
-        TextView creationDate = view.findViewById(R.id.incidence_creation_date);
-        creationDate.setText(incidence.getTimestamp());
-
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        builder.setView(view.getRootView())
-                // Add action buttons
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-
-                    }
-                })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-
-                    }
-                });
-        builder.show();
+        IncidenceOnClickDialog.newInstance(incidence.getType(), incidence.getTimestamp()).show(getActivity().getFragmentManager(), TAG);
     }
 }

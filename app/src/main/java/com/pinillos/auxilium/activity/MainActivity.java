@@ -32,7 +32,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.pinillos.auxilium.R;
-import com.pinillos.auxilium.Util.MessageUtil;
+import com.pinillos.auxilium.util.MessageUtil;
 import com.pinillos.auxilium.fragment.MapsFragment;
 import com.pinillos.auxilium.fragment.IncidenceFragment;
 import com.pinillos.auxilium.fragment.UsersFragment;

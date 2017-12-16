@@ -1,4 +1,4 @@
-package com.pinillos.auxilium.Adapter;
+package com.pinillos.auxilium.adapter;
 
 
 import android.app.Activity;

@@ -1,4 +1,4 @@
-package com.pinillos.auxilium.Util;
+package com.pinillos.auxilium.util;
 
 import android.content.Context;
 import android.support.design.widget.Snackbar;
