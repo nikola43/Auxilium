@@ -35,69 +35,55 @@ import java.util.ArrayList;
 public class UsersFragment extends Fragment {
 
     private static final String TAG = "UsersFragment";
-    private FirebaseDatabase firebaseDatabase;
     private DatabaseReference firebaseDatabaseReference;
-    private View view;
     private ValueEventListener firebaseDatabaseListener;
+    private View view;
 
-    public UsersFragment() {
-        // Required empty public constructor
-    }
-
+    public UsersFragment() {}
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_show_users, container, false);
-
-
-
         return view;
-
-
     }
 
     @Override
     public void onActivityCreated(Bundle state) {
-
         super.onActivityCreated(state);
+        addFirebaseListener();
+    }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (firebaseDatabaseListener != null) {
+            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
+        }
+    }
 
-        //Add firebase event listener
-        firebaseDatabase = MainActivity.firebaseDatabase;
+    public void showUserInfo(UserInformation userInformation) {
+        UserOnClickDialog.newInstance(userInformation.getCategory(), userInformation.getGroup(),
+                userInformation.getFirstName(), userInformation.getLastName2()).show(getActivity().getFragmentManager(), TAG);
+    }
+
+    private void addFirebaseListener() {
         firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
-
-        firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+        firebaseDatabaseListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 ArrayList<UserInformation> userInformationArrayList = new ArrayList<>();
                 Drawable drawable;
 
-                Position position = null;
-                //retrieve data from database
                 for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
-                    String objectType = dbObjects.getKey();
-                    //toastMessage(objectType);
-
                     for (DataSnapshot currentUser : dbObjects.getChildren()) {
-                        final String userID = currentUser.getKey();
-                        //toastMessage(userID);
-
                         for (DataSnapshot currentItem : currentUser.getChildren()) {
+                            if (currentItem.getKey().equals("information")) {
 
-                            String itemType = currentItem.getKey();
-                            //toastMessage(itemType);
-
-
-                            if (itemType.equals("information")) {
                                 UserInformation userInformation = currentItem.getValue(UserInformation.class);
 
-                                String userCategory = userInformation.getCategory();
-
-                                if ( userInformation != null && userInformation.getCategory() != null)
-                                {
-                                    switch (userCategory) {
+                                if ( userInformation != null && userInformation.getCategory() != null) {
+                                    switch (userInformation.getCategory()) {
                                         case "Medico":
                                             drawable = getResources().getDrawable(R.mipmap.ic_medical_round);
                                             break;
@@ -109,7 +95,6 @@ public class UsersFragment extends Fragment {
                                             break;
                                     }
                                     userInformation.setImagen(drawable);
-
                                     userInformationArrayList.add(userInformation);
                                 }
                             }
@@ -121,17 +106,14 @@ public class UsersFragment extends Fragment {
                 UserInformationAdapterItem adapter = new UserInformationAdapterItem(getActivity(), userInformationArrayList);
 
                 lv.setAdapter(adapter);
-
                 lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
                         UserInformation u = (UserInformation) parent.getItemAtPosition(position);
                         showUserInfo(u);
                     }
                 });
             }
-
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
@@ -139,20 +121,8 @@ public class UsersFragment extends Fragment {
                 Toast.makeText(getActivity().getApplicationContext(), "Failed to alter database.", Toast.LENGTH_SHORT).show();
                 Log.w(TAG, "Failed to read value.", databaseError.toException());
             }
-        });
-    }
+        };
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (firebaseDatabaseListener != null) {
-            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
-        }
-    }
-
-    public void showUserInfo(UserInformation userInformation)
-    {
-        UserOnClickDialog.newInstance(userInformation.getCategory(), userInformation.getGroup(),
-                userInformation.getFirstName(), userInformation.getLastName2()).show(getActivity().getFragmentManager(), TAG);
+        firebaseDatabaseReference.addValueEventListener(firebaseDatabaseListener);
     }
 }

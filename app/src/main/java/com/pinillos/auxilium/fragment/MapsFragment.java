@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -56,6 +57,7 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -84,7 +86,6 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.pinillos.auxilium.BuildConfig;
 import com.pinillos.auxilium.dialog.ShowIncidenceImageDialog;
-import com.pinillos.auxilium.dialog.UserOnClickDialog;
 import com.pinillos.auxilium.model.ImageInfo;
 import com.pinillos.auxilium.model.Incidence;
 import com.pinillos.auxilium.R;
@@ -94,16 +95,12 @@ import com.pinillos.auxilium.activity.MainActivity;
 import com.pinillos.auxilium.model.Position;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import static java.lang.System.out;
-
 
 public class MapsFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
@@ -112,7 +109,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
     // Location API
     private GoogleApiClient mGoogleApiClient;
-    private int PLACE_PICKER_REQUEST = 1;
 
     /**
      * Provides access to the Fused Location Provider API.
@@ -167,6 +163,8 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     static final int REQUEST_IMAGE_CAPTURE = 1;
 
     private static final int REQUEST_VIDEO_CAPTURE = 300;
+
+    private final static int PLACE_PICKER_REQUEST = 2;
 
     //Firebase auth and db instances
     private FirebaseDatabase firebaseDatabase;
@@ -306,7 +304,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                 try {
                     PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
                     Intent intent = intentBuilder.build(getActivity());
-                    getActivity().startActivityForResult(intent, PLACE_PICKER_REQUEST);
+                    startActivityForResult(intent, PLACE_PICKER_REQUEST);
                 } catch (GooglePlayServicesRepairableException e) {
                     e.printStackTrace();
                 } catch (GooglePlayServicesNotAvailableException e) {
@@ -461,6 +459,8 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
 
             File file = new File(mCurrentPhotoPath);
@@ -477,7 +477,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
             File thumbnail = new File(file.getParent()+"/"+thumbnailName);
             Uri thumbnailImageFile = Uri.fromFile(thumbnail);
-            MessageUtil.toastMessage(getContext(), file.getParent()+"/"+thumbnailName);
 
             StorageReference imageThumbnailRef = storageReference.child("images/"+thumbnailName);
             imageThumbnailRef.putFile(thumbnailImageFile)
@@ -499,11 +498,21 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             MessageUtil.toastMessage(getContext(),"Foto guardada en la galeria");
         }
 
-
         if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == Activity.RESULT_OK) {
-                //Uri videoUri = data.getData();
-
             MessageUtil.toastMessage(getContext(),"Video guardada en la galeria");
+        }
+
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == Activity.RESULT_OK) {
+
+                Place place = PlacePicker.getPlace(data, getActivity());
+                if ( place != null )
+                {
+                    String tipoIncidencia;
+                    tipoIncidencia = seleccionarTipoIncidencia();
+                    writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                }
+            }
         }
     }
 
@@ -515,7 +524,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             fOut = new FileOutputStream(f);
 
             /**Compress image**/
-            bm.compress(Bitmap.CompressFormat.JPEG, 85, fOut);
+            bm.compress(Bitmap.CompressFormat.JPEG, 30, fOut);
             fOut.flush();
             fOut.close();
 
@@ -525,7 +534,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public static Bitmap rotateImage(Bitmap src, float degree)
@@ -718,16 +726,37 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                 });
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage(getActivity());
+            mGoogleApiClient.disconnect();
+        }
+    }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.connect();
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        getLastLocation();
+        updateUI();
+    }
 
 
     @Override
     public void onPause() {
         super.onPause();
-        //firebaseDatabaseReference.removeValue();
-        mGoogleApiClient.stopAutoManage(getActivity());
-        mGoogleApiClient.disconnect();
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage(getActivity());
+            mGoogleApiClient.disconnect();
+        }
     }
 
     @Override
@@ -739,24 +768,57 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         if (firebaseDatabaseListener != null) {
             firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
         }
-        mGoogleApiClient.disconnect();
-
-
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage((getActivity()));
+            mGoogleApiClient.disconnect();
+        }
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
+
+
+    private void writeIncidenceToFirebaseDB(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
+
+        firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
+        String incidenceID = firebaseDatabaseReference.push().getKey();
+
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType, null);
+
+        //Write incidence to firebase database
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("incidence").child(incidenceID).setValue(incidence);
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
+    public String seleccionarTipoIncidencia() {
 
-        getLastLocation();
+        final Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message mesg) {
+                throw new RuntimeException();
+            }
+        };
 
-        updateUI();
+        //Get incidence types from resources
+        Resources res = getResources();
+        final String[] incidenceTypes = res.getStringArray(R.array.incidenceType_array);
+
+        final String[] selectedType = new String[1];
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(incidenceTypes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        selectedType[0] = incidenceTypes[which];
+                        handler.sendMessage(handler.obtainMessage());
+                    }
+                });
+        builder.show();
+        try {
+            Looper.loop();
+        } catch (RuntimeException e) {
+        }
+
+        return selectedType[0];
+
     }
 
     /**

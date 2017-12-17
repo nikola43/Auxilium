@@ -23,7 +23,6 @@ public class UserOnClickDialog extends BlurDialogFragment {
         args.putString("group", group);
         args.putString("firstName", firstName);
         args.putString("lastName", lastName);
-
         frag.setArguments(args);
         return frag;
     }
@@ -55,19 +54,7 @@ public class UserOnClickDialog extends BlurDialogFragment {
         TextView userLname = view.findViewById(R.id.user_lname);
         userLname.setText(lastName);
 
-        builder.setView(view.getRootView())
-                // Add action buttons
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-
-                    }
-                })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-
-                    }
-                });
+        builder.setView(view.getRootView());
         return builder.create();
     }
 }
