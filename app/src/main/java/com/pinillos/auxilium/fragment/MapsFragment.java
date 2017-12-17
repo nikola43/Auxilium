@@ -4,22 +4,17 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.location.LocationListener;
-import android.media.ExifInterface;
+
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
@@ -38,7 +33,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -104,7 +99,7 @@ import java.util.Date;
 
 public class MapsFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
+        GoogleApiClient.OnConnectionFailedListener {
 
 
     // Location API
@@ -198,8 +193,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_maps, null);
 
-
-
         trackingIsEnabled = false;
         inicializeViews(view);
 
@@ -240,11 +233,27 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton instance
         imageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
 
+        View mapView = mapFragment.getView();
+        if (mapView != null && mapView.findViewById(Integer.parseInt("1")) != null) {
+
+            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
+
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_START, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 0, 0, 0);
+
+            View toolbar = ((View) mapFragment.getView().findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("4"));
+
+            RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) toolbar.getLayoutParams();
+            rlp.addRule(RelativeLayout.ALIGN_PARENT_START, RelativeLayout.TRUE);
+            rlp.setMargins(0, 0, 0, 0);
+        }
         return view;
     }
 
-    public void addListeners()
-    {
+    public void addListeners() {
         //LISTENER DRAG
         onMarkerDragListener = new GoogleMap.OnMarkerDragListener() {
             @Override
@@ -267,27 +276,23 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         onInfoWindowClickListener = new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                String tag =  (String) marker.getTag();
+                String tag = (String) marker.getTag();
                 String aux = tag.split(":")[0];
 
-                if ( aux.equals("https"))
-                {
+                if (aux.equals("https")) {
                     ShowIncidenceImageDialog.newInstance(tag).show(getActivity().getFragmentManager(), TAG);
                 }
-                if (marker.getTag().equals("user"))
-                {
-                    MessageUtil.toastMessage(getContext(),"marker usuario");
+                if (marker.getTag().equals("user")) {
+                    MessageUtil.toastMessage(getContext(), "marker usuario");
                 }
-                if (marker.getTag().equals("incidence"))
-                {
-                    MessageUtil.toastMessage(getContext(),"marker incidence");
+                if (marker.getTag().equals("incidence")) {
+                    MessageUtil.toastMessage(getContext(), "marker incidence");
                 }
             }
         };
     }
 
-    private void checkCameraPermissions()
-    {
+    private void checkCameraPermissions() {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             //takePictureButton.setEnabled(false);
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
@@ -354,23 +359,19 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             @Override
             public void onClick(View v) {
                 trackingIsEnabled = !trackingIsEnabled;
-                if (trackingIsEnabled)
-                {
+                if (trackingIsEnabled) {
                     MessageUtil.toastMessage(getContext(), "Tracking iniciado");
 
-                    Drawable d = getResources().getDrawable( R.drawable.ic_switch_off_tracking );
+                    Drawable d = getResources().getDrawable(R.drawable.ic_switch_off_tracking);
                     initTrackingFab.setIconDrawable(d);
-                    if (!mRequestingLocationUpdates)
-                    {
+                    if (!mRequestingLocationUpdates) {
                         mRequestingLocationUpdates = true;
                         //setButtonsEnabledState();
                         startLocationUpdates();
                     }
-                }
-                else
-                {
-                    MessageUtil.toastMessage(getContext(),"Tracking parado");
-                    Drawable d = getResources().getDrawable( R.drawable.ic_switch_on_tracking );
+                } else {
+                    MessageUtil.toastMessage(getContext(), "Tracking parado");
+                    Drawable d = getResources().getDrawable(R.drawable.ic_switch_on_tracking);
                     initTrackingFab.setIconDrawable(d);
 
                     stopLocationUpdates();
@@ -392,7 +393,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             @Override
             public void onClick(View v) {
                 Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-                Uri fileUri = FileProvider.getUriForFile(getActivity().getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider",createVideoFile());
+                Uri fileUri = FileProvider.getUriForFile(getActivity().getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", createVideoFile());
 
                 takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
                 if (takeVideoIntent.resolveActivity(getActivity().getPackageManager()) != null) {
@@ -431,9 +432,8 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            if (photoFile != null)
-            {
-                Uri imageUri = FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider",photoFile);
+            if (photoFile != null) {
+                Uri imageUri = FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", photoFile);
 
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
@@ -467,18 +467,18 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             Uri imageFile = Uri.fromFile(file);
 
             final String imageName = imageFile.toString().split("/")[11];
-            final String thumbnailName = "thumbnail-"+imageName;
+            final String thumbnailName = "thumbnail-" + imageName;
 
             Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imageFile.getPath()), 512, 512);
 
             bitmap = rotateImage(bitmap, 90);
 
-            savePicture(bitmap, file.getParent()+"/"+thumbnailName );
+            savePicture(bitmap, file.getParent() + "/" + thumbnailName);
 
-            File thumbnail = new File(file.getParent()+"/"+thumbnailName);
+            File thumbnail = new File(file.getParent() + "/" + thumbnailName);
             Uri thumbnailImageFile = Uri.fromFile(thumbnail);
 
-            StorageReference imageThumbnailRef = storageReference.child("images/"+thumbnailName);
+            StorageReference imageThumbnailRef = storageReference.child("images/" + thumbnailName);
             imageThumbnailRef.putFile(thumbnailImageFile)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                         @Override
@@ -495,19 +495,18 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                         }
                     });
 
-            MessageUtil.toastMessage(getContext(),"Foto guardada en la galeria");
+            MessageUtil.toastMessage(getContext(), "Foto guardada en la galeria");
         }
 
         if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == Activity.RESULT_OK) {
-            MessageUtil.toastMessage(getContext(),"Video guardada en la galeria");
+            MessageUtil.toastMessage(getContext(), "Video guardada en la galeria");
         }
 
         if (requestCode == PLACE_PICKER_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
 
                 Place place = PlacePicker.getPlace(data, getActivity());
-                if ( place != null )
-                {
+                if (place != null) {
                     String tipoIncidencia;
                     tipoIncidencia = seleccionarTipoIncidencia();
                     writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
@@ -516,8 +515,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         }
     }
 
-    private void savePicture(Bitmap bm, String imagePath)
-    {
+    private void savePicture(Bitmap bm, String imagePath) {
         OutputStream fOut = null;
         File f = new File(imagePath);
         try {
@@ -536,8 +534,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         }
     }
 
-    public static Bitmap rotateImage(Bitmap src, float degree)
-    {
+    public static Bitmap rotateImage(Bitmap src, float degree) {
         // create new matrix
         Matrix matrix = new Matrix();
         // setup rotation degree
@@ -547,7 +544,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
     }
 
 
-    private void writeNewImageInfoToDB(String name, String url, String creadorID, double lat, double lon, String timeStamp){
+    private void writeNewImageInfoToDB(String name, String url, String creadorID, double lat, double lon, String timeStamp) {
         ImageInfo info = new ImageInfo(name, url, creadorID, lat, lon, timeStamp);
 
         String key = firebaseDatabaseReference.push().getKey();
@@ -577,153 +574,146 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
 
         //Add firebase event listener
         firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        mMap.clear();
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                mMap.clear();
 
-                        Position position = null;
-                        //retrieve data from database
-                        for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
-                            String objectType = dbObjects.getKey();
-                            //toastMessage(objectType);
+                Position position = null;
+                //retrieve data from database
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                    String objectType = dbObjects.getKey();
+                    //toastMessage(objectType);
 
-                            for (DataSnapshot currentUser : dbObjects.getChildren()) {
-                                final String userID = currentUser.getKey();
-                                //toastMessage(userID);
+                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                        final String userID = currentUser.getKey();
+                        //toastMessage(userID);
 
-                                for (DataSnapshot currentItem : currentUser.getChildren()) {
+                        for (DataSnapshot currentItem : currentUser.getChildren()) {
 
-                                    String itemType = currentItem.getKey();
-                                    //toastMessage(itemType);
+                            String itemType = currentItem.getKey();
+                            //toastMessage(itemType);
 
 
-                                    for (DataSnapshot currentField : currentItem.getChildren()) {
+                            for (DataSnapshot currentField : currentItem.getChildren()) {
 
-                                        if (itemType.equals("information")) {
-                                            userInformation = currentItem.getValue(UserInformation.class);
-                                            //toastMessage(userInformation.getFirstName());
-                                        }
+                                if (itemType.equals("information")) {
+                                    userInformation = currentItem.getValue(UserInformation.class);
+                                    //toastMessage(userInformation.getFirstName());
+                                }
 
-                                        if (itemType.equals("position")) {
+                                if (itemType.equals("position")) {
 
-                                            //retrieve position object from database
-                                            String positionID = currentField.getKey();
+                                    //retrieve position object from database
+                                    String positionID = currentField.getKey();
 
-                                            if (positionID.equals("last_position"))
-                                            {
+                                    if (positionID.equals("last_position")) {
 
-                                                Position lastPosition = currentField.getValue(Position.class);
+                                        Position lastPosition = currentField.getValue(Position.class);
 
-                                                if (lastPosition != null) {
-                                                    //toastMessage(position.getCreatorID());
+                                        if (lastPosition != null) {
+                                            //toastMessage(position.getCreatorID());
 
-                                                    int userIcon;
-                                                    switch (userInformation.getCategory()) {
-                                                        case "Bombero":
-                                                            userIcon = R.mipmap.ic_fireman_round;
-                                                            break;
-                                                        case "Medico":
-                                                            userIcon = R.mipmap.ic_medical_round;
-                                                            break;
-                                                        default:
-                                                            userIcon = R.mipmap.ic_fireman_round;
-                                                    }
-
-                                                    mMap.addMarker(new MarkerOptions()
-                                                            .position(new LatLng(lastPosition.getLat(), lastPosition.getLon()))
-                                                            .title(userInformation.getFirstName() + " " + userInformation.getLastName1())
-                                                            .snippet(lastPosition.getTimestamp())
-                                                            .icon(BitmapDescriptorFactory.fromResource(userIcon))
-                                                            .draggable(true))
-                                                            .setTag("user");
-                                                }
+                                            int userIcon;
+                                            switch (userInformation.getCategory()) {
+                                                case "Bombero":
+                                                    userIcon = R.mipmap.ic_fireman_round;
+                                                    break;
+                                                case "Medico":
+                                                    userIcon = R.mipmap.ic_medical_round;
+                                                    break;
+                                                default:
+                                                    userIcon = R.mipmap.ic_fireman_round;
                                             }
+
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(lastPosition.getLat(), lastPosition.getLon()))
+                                                    .title(userInformation.getFirstName() + " " + userInformation.getLastName1())
+                                                    .snippet(lastPosition.getTimestamp())
+                                                    .icon(BitmapDescriptorFactory.fromResource(userIcon))
+                                                    .draggable(true))
+                                                    .setTag("user");
+                                        }
+                                    }
+                                }
+
+
+                                //if retrieved database object are incident type
+                                if (itemType.equals("incidence")) {
+                                    //retrieve incidence object from database
+                                    String incidenceID = currentField.getKey();
+                                    Incidence incidence = currentField.getValue(Incidence.class);
+
+                                    //according to incidence type, shows different icon
+                                    int incidenceIcon;
+
+                                    if (incidence != null && incidence.getType() != null) {
+                                        switch (incidence.getType()) {
+                                            case "Incendio":
+                                                incidenceIcon = R.mipmap.ic_incendio_round;
+                                                break;
+                                            case "Corte luz":
+                                                incidenceIcon = R.mipmap.ic_electrico_round;
+                                                break;
+                                            default:
+                                                incidenceIcon = R.mipmap.ic_incendio_round;
+                                                break;
                                         }
 
+                                        //if the incidence is activated, add google maps marker
+                                        if (incidence.getStatus()) {
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                    .title(incidence.getType())
+                                                    .snippet("Creada por " + incidence.getCreatorID())
+                                                    .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                    .draggable(true))
+                                                    .setTag("incidence");
+                                        }
+                                    }
+                                }
 
+                                //if retrieved database object are incident type
+                                if (itemType.equals("images")) {
+                                    //retrieve incidence object from database
+                                    String imageID = currentField.getKey();
 
-                                        //if retrieved database object are incident type
-                                        if (itemType.equals("incidence")) {
-                                            //retrieve incidence object from database
-                                            String incidenceID = currentField.getKey();
-                                            Incidence incidence = currentField.getValue(Incidence.class);
+                                    final ImageInfo imageInfo = currentField.getValue(ImageInfo.class);
 
-                                            //according to incidence type, shows different icon
-                                            int incidenceIcon;
+                                    String imageType = imageInfo.getName().split("-")[0];
 
-                                            if ( incidence != null && incidence.getType() != null)
-                                            {
-                                                switch (incidence.getType()) {
-                                                    case "Incendio":
-                                                        incidenceIcon = R.mipmap.ic_incendio_round;
-                                                        break;
-                                                    case "Corte luz":
-                                                        incidenceIcon = R.mipmap.ic_electrico_round;
-                                                        break;
-                                                    default:
-                                                        incidenceIcon = R.mipmap.ic_incendio_round;
-                                                        break;
-                                                }
+                                    if (imageType.equals("thumbnail")) {
+                                        imageLoader = ImageLoader.getInstance(); // Get singleton instance
 
-                                                //if the incidence is activated, add google maps marker
-                                                if (incidence.getStatus()) {
-                                                    mMap.addMarker(new MarkerOptions()
-                                                            .position(new LatLng(incidence.getLat(), incidence.getLon()))
-                                                            .title(incidence.getType())
-                                                            .snippet("Creada por " + incidence.getCreatorID())
-                                                            .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
-                                                            .draggable(true))
-                                                            .setTag("incidence");
-                                                }
+                                        imageLoader.loadImage(imageInfo.getUrl(), new SimpleImageLoadingListener() {
+                                            @Override
+                                            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(
+                                                        loadedImage, 100, 100, false);
+
+                                                mMap.addMarker(new MarkerOptions()
+                                                        .position(new LatLng(imageInfo.getLat(), imageInfo.getLon()))
+                                                        .title("Reportada por " + imageInfo.getCreadorID())
+                                                        .snippet(imageInfo.getTimeStamp())
+                                                        .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap)))
+                                                        .setTag(imageInfo.getUrl());
                                             }
-                                        }
-
-                                        //if retrieved database object are incident type
-                                        if (itemType.equals("images"))
-                                        {
-                                            //retrieve incidence object from database
-                                            String imageID = currentField.getKey();
-
-                                            final ImageInfo imageInfo = currentField.getValue(ImageInfo.class);
-
-                                            String imageType = imageInfo.getName().split("-")[0];
-
-                                            if ( imageType.equals("thumbnail") )
-                                            {
-                                                imageLoader = ImageLoader.getInstance(); // Get singleton instance
-
-                                                imageLoader.loadImage(imageInfo.getUrl(), new SimpleImageLoadingListener()
-                                                {
-                                                    @Override
-                                                    public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage)
-                                                    {
-                                                        Bitmap resizedBitmap = Bitmap.createScaledBitmap(
-                                                                loadedImage, 100, 100, false);
-
-                                                        mMap.addMarker(new MarkerOptions()
-                                                                .position(new LatLng(imageInfo.getLat(), imageInfo.getLon()))
-                                                                .title("Reportada por "+imageInfo.getCreadorID())
-                                                                .snippet(imageInfo.getTimeStamp())
-                                                                .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap)))
-                                                                .setTag(imageInfo.getUrl());
-                                                    }
-                                                });
-                                            }
-                                        }
+                                        });
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
 
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        // Failed to read value
-                        MessageUtil.toastMessage(getContext(),"Failed to alter database.");
-                        Log.w(TAG, "Failed to read value.", databaseError.toException());
-                    }
-                });
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Failed to read value
+                MessageUtil.toastMessage(getContext(), "Failed to alter database.");
+                Log.w(TAG, "Failed to read value.", databaseError.toException());
+            }
+        });
     }
 
     @Override
@@ -773,7 +763,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
             mGoogleApiClient.disconnect();
         }
     }
-
 
 
     private void writeIncidenceToFirebaseDB(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
@@ -833,10 +822,7 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                 mCurrentLocation = locationResult.getLastLocation();
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
 
-                //MessageUtil.toastMessage(getContext(), mCurrentLocation.toString());
-
-                if ( mCurrentLocation != null )
-                {
+                if (mCurrentLocation != null) {
                     writeUserPositionToFirebaseDB(firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), mLastUpdateTime);
                 }
                 updateLocationUI();
@@ -880,7 +866,6 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
                         //noinspection MissingPermission
                         mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                                 mLocationCallback, Looper.myLooper());
-
                         updateUI();
                     }
                 })
@@ -1011,13 +996,25 @@ public class MapsFragment extends android.support.v4.app.Fragment implements OnM
         mMap.setOnInfoWindowClickListener(onInfoWindowClickListener);
         mMap.setOnMarkerDragListener(onMarkerDragListener);
 
-        if (ActivityCompat.checkSelfPermission(getActivity(),
-            Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(getActivity(),
-            Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
             return;
+        }
 
-        mMap.setMyLocationEnabled(true);
+        if(checkPermissions())
+        {
+            mMap.setMyLocationEnabled(true);
+        }
+        else
+        {
+            mMap.setMyLocationEnabled(true);
+        }
     }
 
     /**
