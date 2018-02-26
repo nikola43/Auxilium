@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity
                             case R.id.action_incidencias:
                                 getSupportActionBar().setDisplayShowTitleEnabled(true);
                                 toolbar.setTitle("Incidencias");
-                                toolbar.setBackgroundResource(R.color.colorPrimary);
+                                toolbar.setBackgroundResource(R.color.colorAccent);
 
                                 Fragment showIncidenceFragment = new IncidenceFragment();
                                 transaction.replace(R.id.fragment_container, showIncidenceFragment).commit();
@@ -119,7 +119,7 @@ public class MainActivity extends AppCompatActivity
                             case R.id.action_users:
                                 getSupportActionBar().setDisplayShowTitleEnabled(true);
                                 toolbar.setTitle("Usuarios");
-                                toolbar.setBackgroundResource(R.color.colorPrimary);
+                                toolbar.setBackgroundResource(R.color.colorAccent);
 
                                 Fragment showUsersFragment = new UsersFragment();
                                 transaction.replace(R.id.fragment_container, showUsersFragment).commit();

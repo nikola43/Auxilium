@@ -48,7 +48,12 @@
     <string name="permission_rationale">Location permission is needed for core functionality</string>
     <string name="permission_denied_explanation">Permission was denied, but is needed for core functionality.</string>
     <string name="settings">Settings</string>
-    <string name="startTracking">Iniciar Tracking</string>
+    <string name="startTracking">OPCION 1 (En Construcción)</string>
     <string name="stopTracking">Parar Tracking</string>
+
+
+    <string name="forgot_password_text">¿Olvidó la contraseña?<b> Pulse aquí</b></string>
+    <string name="signup_text">¿No tienes cuenta?<b> Regístrate</b></string>
+
 
 </resources>

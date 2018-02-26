@@ -45,7 +45,7 @@ dependencies {
     compile 'com.firebaseui:firebase-ui-storage:0.6.0'
     implementation files('libs/universal-image-loader-1.9.5.jar')
     compile 'fr.tvbarthel.blurdialogfragment:lib:2.2.0'
-
+    compile 'com.github.apg-mobile:android-round-textview:v1.0.0'
 }
 
 

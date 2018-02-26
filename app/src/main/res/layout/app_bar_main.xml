@@ -34,7 +34,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            app:itemBackground="@color/colorBottomNavigationBar"
+            app:itemBackground="@color/colorAccent"
             app:itemIconTint="@color/colorBottomNavigationIcons"
             app:itemTextColor="@color/colorBottomNavigationText"
             app:menu="@menu/bottom_navigation_main" />
