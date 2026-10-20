@@ -1,11 +1,10 @@
 
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/userLayout"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.pinillos.auxilium.ShowUsersFragment">
+        tools:context="com.pinillos.auxilium.fragment.UsersFragment">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -15,10 +14,6 @@
                 android:id="@+id/user_listView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:layout_marginBottom="58dp"
                 android:background="@android:color/white" />
         </RelativeLayout>
     </FrameLayout>

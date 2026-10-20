@@ -5,21 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.pinillos.auxilium.MainActivity"
+    tools:context="com.pinillos.auxilium.activity.MainActivity"
     tools:showIn="@layout/app_bar_main">
-
-
-    <android.support.design.widget.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        app:itemBackground="@color/colorBottomNavigationBar"
-        app:itemIconTint="@color/colorBottomNavigationIcons"
-        app:itemTextColor="@color/colorBottomNavigationText"
-        app:menu="@menu/bottom_navigation_main" />
-
-
 </RelativeLayout>

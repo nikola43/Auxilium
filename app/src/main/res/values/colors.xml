@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#FF0000</color>
+    <color name="colorPrimary">#2196f3</color>
     <color name="colorPrimaryDark">#3755ff</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#5389C6</color>
 
-    <color name="colorBottomNavigationIcons">#214ee1</color>
-    <color name="colorBottomNavigationBar">#7fffffff</color>
-    <color name="colorBottomNavigationText">#000000</color>
+    <color name="colorBottomNavigationIcons">#FFFFFF</color>
+    <color name="colorBottomNavigationBar">#2196f3</color>
+    <color name="colorBottomNavigationText">#FFFFFF</color>
 
     <color name="transparent">#00000000</color>
     <color name="black_alpha_40">#66000000</color>
@@ -14,6 +14,15 @@
 
     <color name="actionbar_opacity">#33000000</color>
 
+    <color name="black_semi_transparent">#B2000000</color>
+    <color name="background">#e5e5e5</color>
+    <color name="half_black">#808080</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_pressed">#f1f1f1</color>
+    <color name="pink">#e91e63</color>
+    <color name="pink_pressed">#ec407a</color>
+    <color name="blue_semi_transparent">#805677fc</color>
+    <color name="blue_semi_transparent_pressed">#80738ffe</color>
     <color name="primary">#03A9F4</color>
     <color name="primary_dark">#0288D1</color>
     <color name="primary_light">#B3E5FC</color>

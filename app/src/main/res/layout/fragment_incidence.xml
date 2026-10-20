@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pinillos.auxilium.ShowIncidenceFragment">
+    tools:context="com.pinillos.auxilium.fragment.IncidenceFragment">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -14,10 +14,6 @@
             android:id="@+id/incidence_listView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginBottom="58dp"
             android:background="@android:color/white" />
     </RelativeLayout>
 </FrameLayout>

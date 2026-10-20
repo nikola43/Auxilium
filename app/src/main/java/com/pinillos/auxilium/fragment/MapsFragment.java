@@ -1,0 +1,1159 @@
+package com.pinillos.auxilium.fragment;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
+import android.location.Location;
+
+import android.media.ThumbnailUtils;
+import android.net.Uri;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.provider.MediaStore;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+import com.pinillos.auxilium.BuildConfig;
+import com.pinillos.auxilium.dialog.ShowIncidenceImageDialog;
+import com.pinillos.auxilium.model.ImageInfo;
+import com.pinillos.auxilium.model.Incidence;
+import com.pinillos.auxilium.R;
+import com.pinillos.auxilium.model.UserInformation;
+import com.pinillos.auxilium.util.MessageUtil;
+import com.pinillos.auxilium.activity.MainActivity;
+import com.pinillos.auxilium.model.Position;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class MapsFragment extends android.support.v4.app.Fragment implements OnMapReadyCallback,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
+
+
+    // Location API
+    private GoogleApiClient mGoogleApiClient;
+
+    /**
+     * Provides access to the Fused Location Provider API.
+     */
+    private FusedLocationProviderClient mFusedLocationClient;
+    /**
+     * Provides access to the Location Settings API.
+     */
+    private SettingsClient mSettingsClient;
+    /**
+     * Represents a geographical location.
+     */
+    private Location mCurrentLocation;
+    /**
+     * Constant used in the location settings dialog.
+     */
+    private static final int REQUEST_CHECK_SETTINGS = 0x1;
+    /**
+     * Tracks the status of the location updates request. Value changes when the user presses the
+     * Start Updates and Stop Updates buttons.
+     */
+    private Boolean mRequestingLocationUpdates;
+    /**
+     * Stores the types of location services the client is interested in using. Used for checking
+     * settings to determine if the device has optimal location settings.
+     */
+    private LocationSettingsRequest mLocationSettingsRequest;
+    /**
+     * Stores parameters for requests to the FusedLocationProviderApi.
+     */
+    private LocationRequest mLocationRequest;
+    /**
+     * Callback for Location events.
+     */
+    private LocationCallback mLocationCallback;
+    /**
+     * The desired interval for location updates. Inexact. Updates may be more or less frequent.
+     */
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+
+    /**
+     * The fastest rate for active location updates. Exact. Updates will never be more frequent
+     * than this value.
+     */
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
+            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    /**
+     * Code used in requesting runtime permissions.
+     */
+    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
+
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+
+    private static final int REQUEST_VIDEO_CAPTURE = 300;
+
+    private final static int PLACE_PICKER_REQUEST = 2;
+
+    //Firebase auth and db instances
+    private FirebaseDatabase firebaseDatabase;
+    private FirebaseAuth firebaseAuth;
+    private FirebaseAuth.AuthStateListener firebaseAuthListener;
+    private DatabaseReference firebaseDatabaseReference;
+    private FirebaseUser firebaseUser;
+    private StorageReference storageReference;
+
+    private com.getbase.floatingactionbutton.FloatingActionButton createIncidenceFab, layerSelectorFab, initTrackingFab, addPhotoFab, addVideoFab;
+    private ValueEventListener firebaseDatabaseListener;
+    private GoogleMap.OnMarkerDragListener onMarkerDragListener;
+    private GoogleMap.OnInfoWindowClickListener onInfoWindowClickListener;
+
+
+    private GoogleMap mMap;
+    private String mLastUpdateTime;
+    //FBA for place and layer select
+    //User info from firebase database
+    private UserInformation userInformation;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private boolean trackingIsEnabled;
+
+    ImageLoader imageLoader;
+
+    String mCurrentPhotoPath;
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.activity_maps, null);
+
+        trackingIsEnabled = false;
+        inicializeViews(view);
+
+        //Add support to map fragment
+        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+        mapFragment.getView().setClickable(true);
+
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .addApi(ActivityRecognition.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .enableAutoManage(getActivity(), this)
+                .build();
+
+        mRequestingLocationUpdates = true;
+        mLastUpdateTime = "";
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        mSettingsClient = LocationServices.getSettingsClient(getActivity());
+
+        createLocationCallback();
+        createLocationRequest();
+        buildLocationSettingsRequest();
+        configureAndInicializeFireBase();
+
+        addListeners();
+
+        stopLocationUpdates();
+        if (!checkPermissions())
+            requestPermissions();
+
+        checkCameraPermissions();
+
+        ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton instance
+        imageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
+
+        View mapView = mapFragment.getView();
+        if (mapView != null && mapView.findViewById(Integer.parseInt("1")) != null) {
+
+            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
+
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_START, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 0, 0, 0);
+
+            View toolbar = ((View) mapFragment.getView().findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("4"));
+
+            RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) toolbar.getLayoutParams();
+            rlp.addRule(RelativeLayout.ALIGN_PARENT_START, RelativeLayout.TRUE);
+            rlp.setMargins(0, 0, 0, 0);
+        }
+        return view;
+    }
+
+    public void addListeners() {
+        //LISTENER DRAG
+        onMarkerDragListener = new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
+                MessageUtil.toastMessage(getActivity(), marker.getPosition().latitude + " " + marker.getPosition().longitude);
+            }
+        };
+
+        //LISTENER CLICK ON WINDOWS INFO
+        onInfoWindowClickListener = new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                String tag = (String) marker.getTag();
+                String aux = tag.split(":")[0];
+
+                if (aux.equals("https")) {
+                    ShowIncidenceImageDialog.newInstance(tag).show(getActivity().getFragmentManager(), TAG);
+                }
+                if (marker.getTag().equals("user")) {
+                    MessageUtil.toastMessage(getContext(), "marker usuario");
+                }
+                if (marker.getTag().equals("incidence")) {
+                    MessageUtil.toastMessage(getContext(), "marker incidence");
+                }
+            }
+        };
+    }
+
+    private void checkCameraPermissions() {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            //takePictureButton.setEnabled(false);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        }
+    }
+
+    private void inicializeViews(View view) {
+
+        //Reference floating button
+        createIncidenceFab = view.findViewById(R.id.create_incidence_fab);
+        createIncidenceFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
+                    Intent intent = intentBuilder.build(getActivity());
+                    startActivityForResult(intent, PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        layerSelectorFab = view.findViewById(R.id.layer_selector_fab);
+        layerSelectorFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                final CharSequence[] items = new CharSequence[4];
+
+                items[0] = "Normal";
+                items[1] = "Terreno";
+                items[2] = "Satelite";
+                items[3] = "Híbrido";
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setTitle("Seleccione un tipo de mapa")
+                        .setItems(items, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case 0:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                                        break;
+                                    case 1:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+                                        break;
+                                    case 2:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+                                        break;
+                                    case 3:
+                                        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                                        break;
+                                }
+                            }
+                        });
+                builder.show();
+            }
+        });
+
+        initTrackingFab = view.findViewById(R.id.init_tracking_fab);
+        initTrackingFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                trackingIsEnabled = !trackingIsEnabled;
+                if (trackingIsEnabled) {
+                    MessageUtil.toastMessage(getContext(), "Tracking iniciado");
+
+                    Drawable d = getResources().getDrawable(R.drawable.ic_switch_off_tracking);
+                    initTrackingFab.setIconDrawable(d);
+                    if (!mRequestingLocationUpdates) {
+                        mRequestingLocationUpdates = true;
+                        //setButtonsEnabledState();
+                        startLocationUpdates();
+                    }
+                } else {
+                    MessageUtil.toastMessage(getContext(), "Tracking parado");
+                    Drawable d = getResources().getDrawable(R.drawable.ic_switch_on_tracking);
+                    initTrackingFab.setIconDrawable(d);
+
+                    stopLocationUpdates();
+                }
+            }
+        });
+
+        addPhotoFab = view.findViewById(R.id.add_photo_fab);
+        addPhotoFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                dispatchTakePictureIntent();
+            }
+        });
+
+        addVideoFab = view.findViewById(R.id.add_video_fab);
+        addVideoFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+                Uri fileUri = FileProvider.getUriForFile(getActivity().getApplicationContext(), BuildConfig.APPLICATION_ID + ".provider", createVideoFile());
+
+                takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+                if (takeVideoIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                    startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+                }
+            }
+        });
+
+    }
+
+    private File createVideoFile() {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = timeStamp + "_";
+        File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+        File image = null;
+        try {
+            image = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".mp4",         /* suffix */
+                    storageDir      /* directory */
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
+    }
+
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+            File photoFile = null;
+
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            if (photoFile != null) {
+                Uri imageUri = FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", photoFile);
+
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = timeStamp + "_";
+        File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+
+            File file = new File(mCurrentPhotoPath);
+            Uri imageFile = Uri.fromFile(file);
+
+            final String imageName = imageFile.toString().split("/")[11];
+            final String thumbnailName = "thumbnail-" + imageName;
+
+            Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(imageFile.getPath()), 512, 512);
+
+            bitmap = rotateImage(bitmap, 90);
+
+            savePicture(bitmap, file.getParent() + "/" + thumbnailName);
+
+            File thumbnail = new File(file.getParent() + "/" + thumbnailName);
+            Uri thumbnailImageFile = Uri.fromFile(thumbnail);
+
+            StorageReference imageThumbnailRef = storageReference.child("images/" + thumbnailName);
+            imageThumbnailRef.putFile(thumbnailImageFile)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            // Get a URL to the uploaded content
+                            Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                            writeNewImageInfoToDB(thumbnailName, downloadUrl.toString(), firebaseUser.getEmail(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), getCurrentTimeStamp());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            MessageUtil.toastMessage(getContext(), exception.getMessage());
+                        }
+                    });
+
+            MessageUtil.toastMessage(getContext(), "Foto guardada en la galeria");
+        }
+
+        if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == Activity.RESULT_OK) {
+            MessageUtil.toastMessage(getContext(), "Video guardada en la galeria");
+        }
+
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == Activity.RESULT_OK) {
+
+                Place place = PlacePicker.getPlace(data, getActivity());
+                if (place != null) {
+                    String tipoIncidencia;
+                    tipoIncidencia = seleccionarTipoIncidencia();
+                    writeIncidenceToFirebaseDB(firebaseUser.getEmail(), place.getLatLng().latitude, place.getLatLng().longitude, true, getCurrentTimeStamp(), tipoIncidencia);
+                }
+            }
+        }
+    }
+
+    private void savePicture(Bitmap bm, String imagePath) {
+        OutputStream fOut = null;
+        File f = new File(imagePath);
+        try {
+            fOut = new FileOutputStream(f);
+
+            /**Compress image**/
+            bm.compress(Bitmap.CompressFormat.JPEG, 30, fOut);
+            fOut.flush();
+            fOut.close();
+
+            /**Update image to gallery**/
+            MediaStore.Images.Media.insertImage(getActivity().getContentResolver(),
+                    f.getAbsolutePath(), f.getName(), f.getName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Bitmap rotateImage(Bitmap src, float degree) {
+        // create new matrix
+        Matrix matrix = new Matrix();
+        // setup rotation degree
+        matrix.postRotate(degree);
+        Bitmap bmp = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
+        return bmp;
+    }
+
+
+    private void writeNewImageInfoToDB(String name, String url, String creadorID, double lat, double lon, String timeStamp) {
+        ImageInfo info = new ImageInfo(name, url, creadorID, lat, lon, timeStamp);
+
+        String key = firebaseDatabaseReference.push().getKey();
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("images").child(key).setValue(info);
+    }
+
+    private void configureAndInicializeFireBase() {
+        //instace firebase auth and database
+        firebaseAuth = MainActivity.firebaseAuth;
+        firebaseDatabase = MainActivity.firebaseDatabase;
+        firebaseDatabaseReference = MainActivity.firebaseDatabaseReference;
+        firebaseUser = MainActivity.firebaseUser;
+        storageReference = MainActivity.storageReference;
+
+        //User login
+        firebaseAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                } else {
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
+
+        //Add firebase event listener
+        firebaseDatabaseListener = firebaseDatabaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                mMap.clear();
+
+                Position position = null;
+                //retrieve data from database
+                for (DataSnapshot dbObjects : dataSnapshot.getChildren()) {
+                    String objectType = dbObjects.getKey();
+                    //toastMessage(objectType);
+
+                    for (DataSnapshot currentUser : dbObjects.getChildren()) {
+                        final String userID = currentUser.getKey();
+                        //toastMessage(userID);
+
+                        for (DataSnapshot currentItem : currentUser.getChildren()) {
+
+                            String itemType = currentItem.getKey();
+                            //toastMessage(itemType);
+
+
+                            for (DataSnapshot currentField : currentItem.getChildren()) {
+
+                                if (itemType.equals("information")) {
+                                    userInformation = currentItem.getValue(UserInformation.class);
+                                    //toastMessage(userInformation.getFirstName());
+                                }
+
+                                if (itemType.equals("position")) {
+
+                                    //retrieve position object from database
+                                    String positionID = currentField.getKey();
+
+                                    if (positionID.equals("last_position")) {
+
+                                        Position lastPosition = currentField.getValue(Position.class);
+
+                                        if (lastPosition != null) {
+                                            //toastMessage(position.getCreatorID());
+
+                                            int userIcon;
+                                            switch (userInformation.getCategory()) {
+                                                case "Bombero":
+                                                    userIcon = R.mipmap.ic_fireman_round;
+                                                    break;
+                                                case "Medico":
+                                                    userIcon = R.mipmap.ic_medical_round;
+                                                    break;
+                                                default:
+                                                    userIcon = R.mipmap.ic_fireman_round;
+                                            }
+
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(lastPosition.getLat(), lastPosition.getLon()))
+                                                    .title(userInformation.getFirstName() + " " + userInformation.getLastName1())
+                                                    .snippet(lastPosition.getTimestamp())
+                                                    .icon(BitmapDescriptorFactory.fromResource(userIcon))
+                                                    .draggable(true))
+                                                    .setTag("user");
+                                        }
+                                    }
+                                }
+
+
+                                //if retrieved database object are incident type
+                                if (itemType.equals("incidence")) {
+                                    //retrieve incidence object from database
+                                    String incidenceID = currentField.getKey();
+                                    Incidence incidence = currentField.getValue(Incidence.class);
+
+                                    //according to incidence type, shows different icon
+                                    int incidenceIcon;
+
+                                    if (incidence != null && incidence.getType() != null) {
+                                        switch (incidence.getType()) {
+                                            case "Incendio":
+                                                incidenceIcon = R.mipmap.ic_incendio_round;
+                                                break;
+                                            case "Corte luz":
+                                                incidenceIcon = R.mipmap.ic_electrico_round;
+                                                break;
+                                            default:
+                                                incidenceIcon = R.mipmap.ic_incendio_round;
+                                                break;
+                                        }
+
+                                        //if the incidence is activated, add google maps marker
+                                        if (incidence.getStatus()) {
+                                            mMap.addMarker(new MarkerOptions()
+                                                    .position(new LatLng(incidence.getLat(), incidence.getLon()))
+                                                    .title(incidence.getType())
+                                                    .snippet("Creada por " + incidence.getCreatorID())
+                                                    .icon(BitmapDescriptorFactory.fromResource(incidenceIcon))
+                                                    .draggable(true))
+                                                    .setTag("incidence");
+                                        }
+                                    }
+                                }
+
+                                //if retrieved database object are incident type
+                                if (itemType.equals("images")) {
+                                    //retrieve incidence object from database
+                                    String imageID = currentField.getKey();
+
+                                    final ImageInfo imageInfo = currentField.getValue(ImageInfo.class);
+
+                                    String imageType = imageInfo.getName().split("-")[0];
+
+                                    if (imageType.equals("thumbnail")) {
+                                        imageLoader = ImageLoader.getInstance(); // Get singleton instance
+
+                                        imageLoader.loadImage(imageInfo.getUrl(), new SimpleImageLoadingListener() {
+                                            @Override
+                                            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                                                Bitmap resizedBitmap = Bitmap.createScaledBitmap(
+                                                        loadedImage, 100, 100, false);
+
+                                                mMap.addMarker(new MarkerOptions()
+                                                        .position(new LatLng(imageInfo.getLat(), imageInfo.getLon()))
+                                                        .title("Reportada por " + imageInfo.getCreadorID())
+                                                        .snippet(imageInfo.getTimeStamp())
+                                                        .icon(BitmapDescriptorFactory.fromBitmap(resizedBitmap)))
+                                                        .setTag(imageInfo.getUrl());
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Failed to read value
+                MessageUtil.toastMessage(getContext(), "Failed to alter database.");
+                Log.w(TAG, "Failed to read value.", databaseError.toException());
+            }
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage(getActivity());
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getLastLocation();
+        updateUI();
+    }
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage(getActivity());
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (firebaseAuthListener != null) {
+            firebaseAuth.removeAuthStateListener(firebaseAuthListener);
+        }
+        if (firebaseDatabaseListener != null) {
+            firebaseDatabaseReference.removeEventListener(firebaseDatabaseListener);
+        }
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage((getActivity()));
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+
+    private void writeIncidenceToFirebaseDB(String creatorID, double lat, double lon, boolean state, String currentTimeStamp, String incidenceType) {
+
+        firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
+        String incidenceID = firebaseDatabaseReference.push().getKey();
+
+        Incidence incidence = new Incidence(creatorID, lat, lon, state, currentTimeStamp, incidenceType, null);
+
+        //Write incidence to firebase database
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("incidence").child(incidenceID).setValue(incidence);
+    }
+
+    public String seleccionarTipoIncidencia() {
+
+        final Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message mesg) {
+                throw new RuntimeException();
+            }
+        };
+
+        //Get incidence types from resources
+        Resources res = getResources();
+        final String[] incidenceTypes = res.getStringArray(R.array.incidenceType_array);
+
+        final String[] selectedType = new String[1];
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        builder.setTitle("Selecciona el tipo de la incidencia: ")
+                .setItems(incidenceTypes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        selectedType[0] = incidenceTypes[which];
+                        handler.sendMessage(handler.obtainMessage());
+                    }
+                });
+        builder.show();
+        try {
+            Looper.loop();
+        } catch (RuntimeException e) {
+        }
+
+        return selectedType[0];
+
+    }
+
+    /**
+     * Creates a callback for receiving location events.
+     */
+    private void createLocationCallback() {
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+
+                mCurrentLocation = locationResult.getLastLocation();
+                mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+
+                if (mCurrentLocation != null) {
+                    writeUserPositionToFirebaseDB(firebaseUser.getUid(), mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), mLastUpdateTime);
+                }
+                updateLocationUI();
+            }
+        };
+    }
+
+    /**
+     * Uses a {@link com.google.android.gms.location.LocationSettingsRequest.Builder} to build
+     * a {@link com.google.android.gms.location.LocationSettingsRequest} that is used for checking
+     * if a device has the needed location settings.
+     */
+    private void buildLocationSettingsRequest() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        mLocationSettingsRequest = builder.build();
+    }
+
+    private void writeUserPositionToFirebaseDB(String creatorID, double lat, double lon, String currentTimeStamp) {
+        firebaseDatabaseReference = firebaseDatabase.getInstance().getReference();
+        String positionID = firebaseDatabaseReference.push().getKey();
+
+        Position myPosition = new Position(creatorID, lat, lon, currentTimeStamp);
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("position").child(positionID).setValue(myPosition);
+        firebaseDatabaseReference.child("users").child(firebaseUser.getUid()).child("position").child("last_position").setValue(myPosition);
+    }
+
+    /**
+     * Requests location updates from the FusedLocationApi. Note: we don't call this unless location
+     * runtime permission has been granted.
+     */
+    private void startLocationUpdates() {
+        // Begin by checking if the device has the necessary location settings.
+        mSettingsClient.checkLocationSettings(mLocationSettingsRequest)
+                .addOnSuccessListener(getActivity(), new OnSuccessListener<LocationSettingsResponse>() {
+                    @SuppressLint("MissingPermission")
+                    @Override
+                    public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                        Log.i(TAG, "All location settings are satisfied.");
+
+                        //noinspection MissingPermission
+                        mFusedLocationClient.requestLocationUpdates(mLocationRequest,
+                                mLocationCallback, Looper.myLooper());
+                        updateUI();
+                    }
+                })
+                .addOnFailureListener(getActivity(), new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        int statusCode = ((ApiException) e).getStatusCode();
+                        switch (statusCode) {
+                            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                                Log.i(TAG, "Location settings are not satisfied. Attempting to upgrade " +
+                                        "location settings ");
+                                try {
+                                    // Show the dialog by calling startResolutionForResult(), and check the
+                                    // result in onActivityResult().
+                                    ResolvableApiException rae = (ResolvableApiException) e;
+                                    rae.startResolutionForResult(getActivity(), REQUEST_CHECK_SETTINGS);
+                                } catch (IntentSender.SendIntentException sie) {
+                                    Log.i(TAG, "PendingIntent unable to execute request.");
+                                }
+                                break;
+                            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                                String errorMessage = "Location settings are inadequate, and cannot be " +
+                                        "fixed here. Fix in Settings.";
+                                Log.e(TAG, errorMessage);
+                                Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_LONG).show();
+                                mRequestingLocationUpdates = false;
+                        }
+
+                        updateUI();
+                    }
+                });
+    }
+
+    /**
+     * Sets up the location request. Android has two location request settings:
+     * {@code ACCESS_COARSE_LOCATION} and {@code ACCESS_FINE_LOCATION}. These settings control
+     * the accuracy of the current location. This sample uses ACCESS_FINE_LOCATION, as defined in
+     * the AndroidManifest.xml.
+     * <p/>
+     * When the ACCESS_FINE_LOCATION setting is specified, combined with a fast update
+     * interval (5 seconds), the Fused Location Provider API returns location updates that are
+     * accurate to within a few feet.
+     * <p/>
+     * These settings are appropriate for mapping applications that show real-time location
+     * updates.
+     */
+    private void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+
+        // Sets the desired interval for active location updates. This interval is
+        // inexact. You may not receive updates at all if no location sources are available, or
+        // you may receive them slower than requested. You may also receive updates faster than
+        // requested if other applications are requesting location at a faster interval.
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+
+        // Sets the fastest rate for active location updates. This interval is exact, and your
+        // application will never receive updates faster than this value.
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    public static String getCurrentTimeStamp() {
+        try {
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String currentDateTime = dateFormat.format(new Date()); // Find todays date
+
+            return currentDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+
+    /**
+     * Updates all UI fields.
+     */
+    private void updateUI() {
+        updateLocationUI();
+    }
+
+    /**
+     * Removes location updates from the FusedLocationApi.
+     */
+    private void stopLocationUpdates() {
+        if (!mRequestingLocationUpdates) {
+            Log.d(TAG, "stopLocationUpdates: updates never requested, no-op.");
+            return;
+        }
+
+        // It is a good practice to remove location requests when the activity is in a paused or
+        // stopped state. Doing so helps battery performance and is especially
+        // recommended in applications that request frequent location updates.
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback)
+                .addOnCompleteListener(getActivity(), new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        mRequestingLocationUpdates = false;
+                        //setButtonsEnabledState();
+                    }
+                });
+    }
+
+    /**
+     * Sets the value of the UI fields for the location latitude, longitude and last update time.
+     */
+    private void updateLocationUI() {
+        if (mCurrentLocation != null) {
+            //MessageUtil.toastMessage(getContext(),"Lat: "+mCurrentLocation.getLatitude()+ " Lon: "+mCurrentLocation.getLatitude()+" "+" hora: "+mLastUpdateTime);
+        }
+    }
+
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        mMap.setOnInfoWindowClickListener(onInfoWindowClickListener);
+        mMap.setOnMarkerDragListener(onMarkerDragListener);
+
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+
+        if(checkPermissions())
+        {
+            mMap.setMyLocationEnabled(true);
+        }
+        else
+        {
+            mMap.setMyLocationEnabled(true);
+        }
+    }
+
+    /**
+     * Return the current state of the permissions needed.
+     */
+    private boolean checkPermissions() {
+        int permissionState = ActivityCompat.checkSelfPermission(getActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissions() {
+        boolean shouldProvideRationale =
+                ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                        Manifest.permission.ACCESS_FINE_LOCATION);
+
+        // Provide an additional rationale to the user. This would happen if the user denied the
+        // request previously, but didn't check the "Don't ask again" checkbox.
+        if (shouldProvideRationale) {
+            Log.i(TAG, "Displaying permission rationale to provide additional context.");
+            MessageUtil.showSnackbar(this.getView(), getActivity(), R.string.permission_rationale,
+                    android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            // Request permission
+                            ActivityCompat.requestPermissions(getActivity(),
+                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                    REQUEST_PERMISSIONS_REQUEST_CODE);
+                        }
+                    });
+        } else {
+            Log.i(TAG, "Requesting permission");
+            // Request permission. It's possible this can be auto answered if device policy
+            // sets the permission in a given state or the user denied the permission
+            // previously and checked "Never ask again".
+            ActivityCompat.requestPermissions(getActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_PERMISSIONS_REQUEST_CODE);
+        }
+    }
+
+    /**
+     * Callback received when a permissions request has been completed.
+     */
+    @SuppressWarnings("MissingPermission")
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        Log.i(TAG, "onRequestPermissionResult");
+
+        if (requestCode == 0) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                //takePictureButton.setEnabled(true);
+            }
+        }
+
+        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
+            if (grantResults.length <= 0) {
+                // If user interaction was interrupted, the permission request is cancelled and you
+                // receive empty arrays.
+                Log.i(TAG, "User interaction was cancelled.");
+            } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (mRequestingLocationUpdates) {
+                    Log.i(TAG, "Permission granted, updates requested, starting location updates");
+                    startLocationUpdates();
+                }
+            } else {
+                // Permission denied.
+
+                // Notify the user via a SnackBar that they have rejected a core permission for the
+                // app, which makes the Activity useless. In a real app, core permissions would
+                // typically be best requested during a welcome-screen flow.
+
+                // Additionally, it is important to remember that a permission might have been
+                // rejected without asking the user for permission (device policy or "Never ask
+                // again" prompts). Therefore, a user interface affordance is typically implemented
+                // when permissions are denied. Otherwise, your app could appear unresponsive to
+                // touches or interactions which have required permissions.
+                MessageUtil.showSnackbar(getView(), getActivity(), R.string.permission_denied_explanation,
+                        R.string.settings, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                // Build intent that displays the App settings screen.
+                                Intent intent = new Intent();
+                                intent.setAction(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                Uri uri = Uri.fromParts("package",
+                                        BuildConfig.APPLICATION_ID, null);
+                                intent.setData(uri);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                        });
+            }
+        }
+    }
+
+
+    @Override
+    public void onConnected (@Nullable Bundle bundle){
+
+
+            if (mCurrentLocation != null) {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 15.0f));
+            } else {
+                MessageUtil.toastMessage(getActivity(), "Ubicación no encontrada");
+            }
+        }
+
+    @Override
+    public void onConnectionSuspended ( int i){
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @SuppressLint("MissingPermission")
+    private void getLastLocation() {
+        if (checkPermissions()) {
+            mFusedLocationClient.getLastLocation()
+                    .addOnCompleteListener(getActivity(), new OnCompleteListener<Location>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Location> task) {
+                            if (task.isSuccessful() && task.getResult() != null) {
+                                mCurrentLocation = task.getResult();
+
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()), 15.0f));
+
+                            } else {
+                                Log.w(TAG, "getLastLocation:exception", task.getException());
+                            }
+                        }
+                    });
+        }
+    }
+
+
+}
