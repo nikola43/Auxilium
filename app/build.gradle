@@ -1,4 +1,9 @@
 apply plugin: 'com.android.application'
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.8'
+}
 
 android {
     compileSdkVersion 26
@@ -57,3 +62,17 @@ dependencies {
 
 
 apply plugin: 'com.google.gms.google-services'
+
+afterEvaluate {
+    task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
+        reports {
+            xml.enabled = true
+            html.enabled = true
+        }
+        sourceDirectories = files('src/main/java')
+        classDirectories = fileTree(dir: "$buildDir/intermediates/classes/debug", excludes: [
+            '**/R.class', '**/R$*.class', '**/BuildConfig.class', '**/Manifest*.class'
+        ])
+        executionData = fileTree(dir: buildDir, includes: ['jacoco/*.exec'])
+    }
+}
